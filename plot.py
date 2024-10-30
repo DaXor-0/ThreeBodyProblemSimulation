@@ -55,7 +55,7 @@ for iter_num in iterations:
             mass = body_data['mass'].values[0]
 
             # Set size of the marker relative to mass
-            marker_size = 5
+            marker_size = mass * 10
 
             # Plot the body
             ax.plot(x_pos, y_pos, 'o', markersize=marker_size, label=f'Body {body_id}' if iter_num == 0 else "")
@@ -67,7 +67,7 @@ for iter_num in iterations:
 
 # Create GIF
 output_gif = 'n_body_simulation.gif'
-imageio.mimsave(output_gif, frames, fps=10)
+imageio.mimsave(output_gif, frames, fps=20)
 plt.close(fig)
 
 print(f"GIF saved as {output_gif}")

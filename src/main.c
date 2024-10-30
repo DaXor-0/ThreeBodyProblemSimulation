@@ -63,14 +63,10 @@ int main(int argc, char** argv){
   if (rank == 0){
     set_initial_conditions(&system_status, n_of_bodies);
       printf("iter_number,body_id, mass, x_pos, x_vel, x_acc, y_pos, y_vel, y_acc\n"); 
-      for (int i = 0; i < n_of_bodies; i++) printf("0,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", i,
-                                                   system_status.mass[i],
-                                                   system_status.x_data[i*3],
-                                                   system_status.x_data[i*3+1],
-                                                   system_status.x_data[i*3+2],
-                                                   system_status.y_data[i*3],
-                                                   system_status.y_data[i*3+1],
-                                                   system_status.y_data[i*3+2]);
+      for (int i = 0; i < n_of_bodies; i++)
+      printf("0,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", i, system_status.mass[i],
+          system_status.x_data[i*3], system_status.x_data[i*3+1], system_status.x_data[i*3+2],
+          system_status.y_data[i*3], system_status.y_data[i*3+1], system_status.y_data[i*3+2]);
   }
 
   MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
