@@ -5,45 +5,54 @@
 
 #include "tools.h"
 
-int set_initial_conditions(planet **target, int n_of_bodies){
+int set_initial_conditions(body_system *system){
   unsigned int seed = time(NULL);
   
-  for (int body = 0; body < n_of_bodies; body++){
-    target[body]->mass = (int)rand_r(&seed) / RAND_MAX * 100;
-    //target[body]->radius = (double)rand_r(&seed) / RAND_MAX * 100.0;
-    target[body]->pos[0] = (double)rand_r(&seed) / RAND_MAX * 100.0;
-    target[body]->pos[1] = (double)rand_r(&seed) / RAND_MAX * 100.0;
-    target[body]->vel[0] = (double)rand_r(&seed) / RAND_MAX * 100.0;
-    target[body]->vel[1] = (double)rand_r(&seed) / RAND_MAX * 100.0;
-    target[body]->acc[0] = 0;
-    target[body]->acc[1] = 0;
+  int idx;
+  for (int body = 0; body < system->n_of_bodies; body++){
+    system->mass[body] = (double)rand_r(&seed) / RAND_MAX * 100;
+    
+    idx = 3 * body;
+
+    for(int i = 0; i < 2; i++){
+      system->x_data[idx + i] = (double)rand_r(&seed) / RAND_MAX * 100.0;
+      system->y_data[idx + i] = (double)rand_r(&seed) / RAND_MAX * 100.0;
+    }
+    system->x_data[idx + 2] = 0.0;
+    system->y_data[idx + 2] = 0.0;
   }
 
   return 0;  // Success
 }
 
-
+  // void acceleration_update(float* data, float* mass, size_t n_of_bodies);
 
 //update acceleration with actual conditions
-int acceleration_update(planet **target, int n_of_bodies){
+int acceleration_update(body_system *system, size_t n_of_bodies){
 
-  double d_x, d_y, cubed_d_x, cubed_d_y;
+  double dist, cubed_dist;
   
-  for (int body_i = 0; body_i < n_of_bodies; body_i++){
-    target[body_i]->acc[0] = 0;
-    target[body_i]->acc[1] = 0;
-    for(int body_k = 0; body_k < n_of_bodies; body_k++){
-      //distances between the two masses 
-      d_x = target[body_k]->pos[0]-target[body_i]->pos[0];
-      d_y = target[body_k]->pos[1]-target[body_i]->pos[1];
-      cubed_d_x = abs(d_x*d_x*d_x);
-      cubed_d_y = fabs(d_y*d_y*d_y);
+  int t_idx, s_idx;
+  for (int target_body = 0; target_body < n_of_bodies; target_body++){
+    
+    t_idx = target_body * 3;
+    double new_x_acc = 0.0;
+    double x_pos = system->x_data[t_idx]; // data[t_idx];
+
+    // To update the acc, we need to check every other body distances 
+    for(int source_body = 0; source_body < n_of_bodies; source_body++){
+      //distances between the two masses
+      s_idx = source_body * 3;
+      // skip same body to avoid division by 0
+      if (s_idx == t_idx) continue;
+
+      dist = system->x_data[s_idx] - x_pos;
+      cubed_dist = fabs(dist * dist * dist);
       
-      target[body]_i->acc[0] += target[body_k]->mass*d_x/cubed_d_x;
-      target[body_i]->acc[1] += target[body_k]->mass*d_y/cubed_d_y;
+      new_x_acc += system->mass[source_body] * dist / cubed_dist;
     }
-    target[body_i]->acc[0] = target[body]->acc[0]*GLOBAL_CONSTANT_G;
-    target[body_i]->acc[1] = target[body]->acc[1]*GLOBAL_CONSTANT_G;
+
+    system->x_data[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
   }
 
   return 0;  // Success

@@ -19,12 +19,13 @@
 
 typedef struct{
   size_t n_of_bodies;
-  double mass;
-  double* x_data[3]; // [0]-> x_pos [1]->x_vel [2]->x_acc
-  double* y_data[3]; // [0]-> y_pos [1]->y_vel [2]->y_acc
+  double* mass;
+  double* x_data; // [0]-> x_pos [1]->x_vel [2]->x_acc
+  double* y_data; // [0]-> y_pos [1]->y_vel [2]->y_acc
 } body_system;
 
+int set_initial_conditions(body_system *system);
 
-int set_initial_conditions(body_system **system);
+void acceleration_update(float* data, float* mass, size_t n_of_bodies);
 
 #endif
