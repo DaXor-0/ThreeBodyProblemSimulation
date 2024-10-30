@@ -23,8 +23,10 @@ typedef struct{
   double* y_data; // [0]-> y_pos [1]->y_vel [2]->y_acc
 } body_system;
 
-int set_initial_conditions(body_system *system);
+void set_initial_conditions(body_system *system, size_t n_of_bodies);
 
-void acceleration_update(float* data, float* mass, size_t n_of_bodies);
+void acceleration_update(double* data, double* mass, size_t n_of_bodies);
+
+void time_step_update(double *data, size_t n_of_bodies ,double delta_t);
 
 #endif

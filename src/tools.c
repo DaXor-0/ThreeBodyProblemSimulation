@@ -5,11 +5,11 @@
 
 #include "tools.h"
 
-int set_initial_conditions(body_system *system){
+void set_initial_conditions(body_system *system, size_t n_of_bodies){
   unsigned int seed = time(NULL);
   
   int idx;
-  for (int body = 0; body < system->n_of_bodies; body++){
+  for (int body = 0; body < n_of_bodies; body++){
     system->mass[body] = (double)rand_r(&seed) / RAND_MAX * 100;
     
     idx = 3 * body;
@@ -22,10 +22,8 @@ int set_initial_conditions(body_system *system){
     system->y_data[idx + 2] = 0.0;
   }
 
-  return 0;  // Success
 }
 
-// void acceleration_update(float* data, float* mass, size_t n_of_bodies);
 
 //update acceleration with actual conditions
 void acceleration_update(double* data, double* mass, size_t n_of_bodies){
@@ -89,3 +87,5 @@ void time_step_update(double *data, size_t n_of_bodies ,double delta_t){
   }
 
 }
+
+
