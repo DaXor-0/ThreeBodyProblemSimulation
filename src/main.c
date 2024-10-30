@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
+<<<<<<< HEAD
 #include "tools.h"
 
 int main(int argc, char** argv){
@@ -41,4 +42,14 @@ int main(int argc, char** argv){
 
 cleanup:
   MPI_Abort(comm, 1);
+=======
+int main(){
+
+
+
+
+
+
+
+>>>>>>> test-leo
 }
