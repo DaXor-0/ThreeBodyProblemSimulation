@@ -14,6 +14,8 @@ int set_initial_conditions(planet **target, int n_of_bodies){
     target[body]->pos[1] = (double)rand_r(&seed) / RAND_MAX * 100.0;
     target[body]->vel[0] = (double)rand_r(&seed) / RAND_MAX * 100.0;
     target[body]->vel[1] = (double)rand_r(&seed) / RAND_MAX * 100.0;
+    target[body]->acc[0] = 0;
+    target[body]->acc[1] = 0;
   }
 
   return 0;  // Success

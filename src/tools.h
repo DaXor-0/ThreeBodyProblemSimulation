@@ -8,6 +8,7 @@ typedef struct{
   //double radius;
   double pos[2];
   double vel[2];
+  double acc[2];
 } planet;
 
 // 10.24 10.40
