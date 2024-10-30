@@ -41,23 +41,5 @@ int main(int argc, char** argv){
 
 cleanup:
   MPI_Abort(comm, 1);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> main
-=======
-int main(){
-
-
-
-
-
-
-
->>>>>>> test-leo
-<<<<<<< HEAD
->>>>>>> main
-=======
->>>>>>> main
 }
+
