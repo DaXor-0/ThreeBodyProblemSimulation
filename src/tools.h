@@ -17,7 +17,6 @@ typedef struct{
   double acc[2];
 } planet;
 
-// 10.24 10.40
 
 int set_initial_conditions(planet **target, int n_of_bodies);
 

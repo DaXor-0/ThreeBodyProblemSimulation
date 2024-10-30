@@ -1,5 +1,6 @@
 MPICC = mpicc
 CFLAGS_MPI = -O3 -Wall
+LINK_FLAGS = -lm
 
 SRC_DIR = src
 OBJ_DIR = obj
@@ -15,7 +16,7 @@ all: $(MAIN_EXEC)
 
 # Build the main test executable with mpicc
 $(MAIN_EXEC): $(OBJS)
-	$(MPICC) $(CFLAGS_MPI) $(OBJS) -o $(MAIN_EXEC)
+	$(MPICC) $(CFLAGS_MPI) $(LINK_FLAGS) $(OBJS) -o $(MAIN_EXEC)
 
 # Build object files for the source files in the src directory with mpicc
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c

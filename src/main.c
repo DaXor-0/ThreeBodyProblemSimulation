@@ -4,8 +4,6 @@
 
 #include "tools.h"
 
-
-
 int main(int argc, char** argv){
 
   MPI_Init(NULL, NULL);
@@ -14,7 +12,7 @@ int main(int argc, char** argv){
   MPI_Comm_size(comm, &comm_sz);
   MPI_Comm_rank(comm, &rank);
 
-  if (argc < 6){
+  if (argc < 3){
     if( rank == 0 ) fprintf(stderr, "Usage: %s <n_of_bodies> <n_of_iter>\n", argv[0]);
     goto cleanup;
   }
@@ -36,8 +34,6 @@ int main(int argc, char** argv){
   int split_rank;
   size_t large_body_count, small_body_count;
   COMPUTE_BODY_COUNT(n_of_bodies, comm_sz, split_rank, large_body_count, small_body_count);
-
-
 
   MPI_Finalize();
 
