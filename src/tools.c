@@ -87,5 +87,25 @@ void time_step_update(double *data, size_t n_of_bodies ,double delta_t){
   }
 
 }
+void print_data(const char *filename, body_system *system, size_t n_of_bodies, size_t n_of_iter, int write_header) {
+    FILE *file = fopen(filename, "a");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file for appending\n");
+        return;
+    }
 
+    // Write header only once (at the start)
+    if (write_header) {
+        fprintf(file, "iteration,body_index,mass,x_pos,x_vel,x_acc,y_pos,y_vel,y_acc\n");
+    }
 
+    for (size_t i = 0; i < n_of_bodies; i++) {
+        fprintf(file, "%ld, %ld, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
+            n_of_iter, i, system->mass[i],
+            system->x_data[3*i], system->x_data[3*i + 1], system->x_data[3*i + 2],
+            system->y_data[3*i], system->y_data[3*i + 1], system->y_data[3*i + 2]
+        );
+    }
+
+    fclose(file); // Close file after each append
+}

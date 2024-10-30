@@ -5,7 +5,7 @@
 
 #define SAVE_HISTORY 50
 
-#define GLOBAL_CONSTANT_G 9.81
+#define GLOBAL_CONSTANT_G 1
 #define GRID_MAX 100
 #define GRID_MIN 0
 
@@ -28,5 +28,7 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies);
 void acceleration_update(double* data, double* mass, size_t n_of_bodies);
 
 void time_step_update(double *data, size_t n_of_bodies ,double delta_t);
+
+void print_data(const char *filename, body_system *system, size_t n_of_bodies, size_t n_of_iter, int write_header);
 
 #endif
