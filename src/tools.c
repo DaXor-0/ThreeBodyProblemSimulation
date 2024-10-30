@@ -25,10 +25,10 @@ int set_initial_conditions(body_system *system){
   return 0;  // Success
 }
 
-  // void acceleration_update(float* data, float* mass, size_t n_of_bodies);
+// void acceleration_update(float* data, float* mass, size_t n_of_bodies);
 
 //update acceleration with actual conditions
-int acceleration_update(body_system *system, size_t n_of_bodies){
+void acceleration_update(double* data, double* mass, size_t n_of_bodies){
 
   double dist, cubed_dist;
   
@@ -37,7 +37,7 @@ int acceleration_update(body_system *system, size_t n_of_bodies){
     
     t_idx = target_body * 3;
     double new_x_acc = 0.0;
-    double x_pos = system->x_data[t_idx]; // data[t_idx];
+    double x_pos = data[t_idx]; // data[t_idx];
 
     // To update the acc, we need to check every other body distances 
     for(int source_body = 0; source_body < n_of_bodies; source_body++){
@@ -46,40 +46,46 @@ int acceleration_update(body_system *system, size_t n_of_bodies){
       // skip same body to avoid division by 0
       if (s_idx == t_idx) continue;
 
-      dist = system->x_data[s_idx] - x_pos;
+      dist = data[s_idx] - x_pos;
       cubed_dist = fabs(dist * dist * dist);
       
-      new_x_acc += system->mass[source_body] * dist / cubed_dist;
+      new_x_acc += mass[source_body] * dist / cubed_dist;
     }
 
-    system->x_data[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
+    data[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
   }
-
-  return 0;  // Success
+  
 }
 
-//Time-step update
-int time_step_update(planet **target, int n_of_bodies, double delta_t){
+//Time-step update, considering acceleration already updated
+void time_step_update(double *data, size_t n_of_bodies ,double delta_t){
   
-  double delta_x, delta_y, delta_vx, delta_vy;
+  double delta_p, delta_v, position, velocity;
+  int t_idx;
   
-  acceleration_update(target, n_of_bodies);
-  
-  for (int body = 0; body < n_of_bodies; body++){
-    //delta for positions
-    delta_x = target[body]->vel[0]*delta_t + 0.5*target[body]->acc[0]*delta_t*delta_t;
-    delta_y = target[body]->vel[1]*delta_t + 0.5*target[body]->acc[1]*delta_t*delta_t;
-    //delta for velocities
-    delta_vx = target[body]->acc[0]*delta_t;
-    delta_vy = target[body]->acc[1]*delta_t;
+  for (int target_body = 0; target_body < n_of_bodies; target_body++){
+    t_idx = target_body * 3;
     
-    //update of positions
-    target[body]->pos[0] += delta_x;
-    target[body]->pos[1] += delta_y;
-    //update of velocities
-    target[body]->vel[0] += delta_vx;
-    target[body]->vel[1] += delta_vy;
+    //delta for position
+    delta_p = data[t_idx+1]*delta_t + 0.5*data[t_idx+2]*delta_t*delta_t;
+    //delta for velocity
+    delta_v = data[t_idx+2]*delta_t;
+    
+    //evaluate postition and velocity and control if in boundary
+    position = data[t_idx] + delta_p;
+    velocity = data[t_idx+1] + delta_v;
+    if(position < GRID_MIN){
+      position = 2*GRID_MIN - position;
+      velocity = -velocity;
+    }
+    else if(position > GRID_MAX){
+      position = 2*GRID_MAX - position;
+      velocity = -velocity;
+    }
+    
+    //update position and velocity
+    data[t_idx] = position;
+    data[t_idx+1] = velocity;
   }
 
-  return 0;  // Success
 }
