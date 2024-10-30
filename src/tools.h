@@ -2,12 +2,14 @@
 #define TOOLS_H
 
 #include <stdlib.h>
+#define GLOBAL_CONSTANT_G 9.81
 
 typedef struct{
   int mass;
   //double radius;
   double pos[2];
   double vel[2];
+  double acc[2];
 } planet;
 
 // 10.24 10.40
