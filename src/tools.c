@@ -8,8 +8,8 @@
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
   unsigned int seed = time(NULL);
 
-  double range_pos = (double)RAND_MAX / (GRID_MAX-GRID_MIN);
-  double vel_size = 10 * n_of_bodies / GRID_MAX-GRID_MIN;
+  double range_pos = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
+  double vel_size = 10 * (double) n_of_bodies / (GRID_MAX - GRID_MIN);
   
   int idx;
   for (int body = 0; body < n_of_bodies; body++){
@@ -17,11 +17,11 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies){
     
     idx = 3 * body;
 
-    system->x_data[idx] = ((double)rand_r(&seed) / range_pos + GRID_MIN;
-    system->y_data[idx] = ((double)rand_r(&seed) / range_pos + GRID_MIN;
+    system->x_data[idx] = (double)rand_r(&seed) / range_pos + GRID_MIN;
+    system->y_data[idx] = (double)rand_r(&seed) / range_pos + GRID_MIN;
  
-    system->x_data[idx+1] = (((double)rand_r(&seed) / RAND_MAX - 2) * vel_size;
-    system->y_data[idx+1] = (((double)rand_r(&seed) / RAND_MAX - 2) * vel_size;
+    system->x_data[idx+1] = ((double)rand_r(&seed) / RAND_MAX - 2) * vel_size;
+    system->y_data[idx+1] = ((double)rand_r(&seed) / RAND_MAX - 2) * vel_size;
  
  
     system->x_data[idx + 2] = 0.0;
