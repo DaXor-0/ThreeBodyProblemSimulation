@@ -9,7 +9,7 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies){
   unsigned int seed = time(NULL);
 
   double range_pos = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
-  double vel_size = 10 * (double) n_of_bodies / (GRID_MAX - GRID_MIN);
+  double vel_size = 5 * (double) n_of_bodies / (GRID_MAX - GRID_MIN);
   
   int idx;
   for (int body = 0; body < n_of_bodies; body++){
@@ -32,43 +32,50 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies){
 
 
 //update acceleration with actual conditions
-void acceleration_update(double* data, double* mass, size_t n_of_bodies){
+void acceleration_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
 
-  double dist, cubed_dist;
+  double dist_x, dist_y, radius, cubed_radius;
   
   int t_idx, s_idx;
-  for (int target_body = 0; target_body < n_of_bodies; target_body++){
+  for (size_t target_body = 0; target_body < (count / 3); target_body++){
     
-    t_idx = target_body * 3;
+    t_idx = (int)(target_body * 3) + (int)first;
     double new_x_acc = 0.0;
-    double x_pos = data[t_idx]; // data[t_idx];
-
+    double new_y_acc = 0.0;
+    double x_pos = data_x[t_idx]; // data[t_idx];
+    double y_pos = data_y[t_idx];
     // To update the acc, we need to check every other body distances 
-    for(int source_body = 0; source_body < n_of_bodies; source_body++){
+    for(size_t source_body = 0; source_body < n_of_bodies; source_body++){
       //distances between the two masses
-      s_idx = source_body * 3;
+      s_idx = (int) source_body * 3;
       // skip same body to avoid division by 0
       if (s_idx == t_idx) continue;
 
-      dist = data[s_idx] - x_pos;
-      cubed_dist = fabs(dist * dist * dist);
+      dist_x = data_x[s_idx] - x_pos;
+      dist_y = data_y[s_idx] - y_pos;
+
+      radius = sqrt(dist_y * dist_y + dist_x * dist_x);
+      cubed_radius = radius * radius * radius;
       
-      new_x_acc += mass[source_body] * dist / cubed_dist;
+      new_x_acc += mass[source_body] * dist_x / cubed_radius;
+      new_y_acc += mass[source_body] * dist_y / cubed_radius;
     }
 
-    data[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
+    data_x[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
+    data_y[t_idx + 2] = new_y_acc * GLOBAL_CONSTANT_G;
   }
   
 }
 
 //Time-step update, considering acceleration already updated
-void time_step_update(double *data, size_t n_of_bodies ,double delta_t){
-  
+void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t count, size_t first){
+
   double delta_p, delta_v, position, velocity;
   int t_idx;
+
   
-  for (int target_body = 0; target_body < n_of_bodies; target_body++){
-    t_idx = target_body * 3;
+  for (size_t target_body = 0; target_body < (count / 3); target_body++){
+    t_idx = (int)(target_body * 3) + (int) first;
     
     //delta for position
     delta_p = data[t_idx+1]*delta_t + 0.5*data[t_idx+2]*delta_t*delta_t;

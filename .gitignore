@@ -54,3 +54,7 @@ dkms.conf
 # Clangd compile commands
 compile_commands.json
 .cache/
+
+# Results
+*.gif
+*.csv
