@@ -35,6 +35,15 @@ int main(int argc, char** argv){
   size_t large_body_count, small_body_count;
   COMPUTE_BODY_COUNT(n_of_bodies, comm_sz, split_rank, large_body_count, small_body_count);
 
+  planet* bodies = (planet *)malloc(n_of_bodies * sizeof(planet));
+  if (rank == 0){
+    set_initial_conditions(&bodies, n_of_bodies);
+  }
+  
+
+
+
+
   MPI_Finalize();
 
   return 0;
