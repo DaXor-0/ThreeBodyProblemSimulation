@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+
 #include "tools.h"
 
 int set_initial_conditions(planet **target, int n_of_bodies){
@@ -14,6 +15,8 @@ int set_initial_conditions(planet **target, int n_of_bodies){
     target[body]->pos[1] = (double)rand_r(&seed) / RAND_MAX * 100.0;
     target[body]->vel[0] = (double)rand_r(&seed) / RAND_MAX * 100.0;
     target[body]->vel[1] = (double)rand_r(&seed) / RAND_MAX * 100.0;
+    target[body]->acc[0] = 0;
+    target[body]->acc[1] = 0;
   }
 
   return 0;  // Success
@@ -34,8 +37,8 @@ int acceleration_update(planet **target, int n_of_bodies){
       cubed_d_x = abs(d_x*d_x*d_x);
       cubed_d_y = fabs(d_y*d_y*d_y);
       
-      target[body]->acc[0] += target[body_2]->mass*d_x/cubed_d_x;
-      target[body]->acc[1] += target[body_2]->mass*d_y/cubed_d_y;
+      target[body]->acc[0] += target[body_k]->mass*d_x/cubed_d_x;
+      target[body]->acc[1] += target[body_k]->mass*d_y/cubed_d_y;
     }
     target[body]->acc[0] = target[body]->acc[0]*GLOBAL_CONSTANT_G;
     target[body]->acc[1] = target[body]->acc[1]*GLOBAL_CONSTANT_G;
