@@ -22,6 +22,8 @@ int set_initial_conditions(planet **target, int n_of_bodies){
   return 0;  // Success
 }
 
+
+
 //update acceleration with actual conditions
 int acceleration_update(planet **target, int n_of_bodies){
 
@@ -37,11 +39,11 @@ int acceleration_update(planet **target, int n_of_bodies){
       cubed_d_x = abs(d_x*d_x*d_x);
       cubed_d_y = fabs(d_y*d_y*d_y);
       
-      target[body]->acc[0] += target[body_k]->mass*d_x/cubed_d_x;
-      target[body]->acc[1] += target[body_k]->mass*d_y/cubed_d_y;
+      target[body]_i->acc[0] += target[body_k]->mass*d_x/cubed_d_x;
+      target[body_i]->acc[1] += target[body_k]->mass*d_y/cubed_d_y;
     }
-    target[body]->acc[0] = target[body]->acc[0]*GLOBAL_CONSTANT_G;
-    target[body]->acc[1] = target[body]->acc[1]*GLOBAL_CONSTANT_G;
+    target[body_i]->acc[0] = target[body]->acc[0]*GLOBAL_CONSTANT_G;
+    target[body_i]->acc[1] = target[body]->acc[1]*GLOBAL_CONSTANT_G;
   }
 
   return 0;  // Success
