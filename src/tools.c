@@ -105,6 +105,80 @@ void acceleration_yukawa_update(double* data_x, double* data_y, double* mass, si
   
 }
 
+//update acceleration with actual conditions
+// approximation with gaussian potential
+void acceleration_gaussian_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
+
+  double dist_x, dist_y, radius, cubed_radius;
+  
+  int t_idx, s_idx;
+  for (size_t target_body = 0; target_body < (count / 3); target_body++){
+    
+    t_idx = (int)(target_body * 3) + (int)first;
+    double new_x_acc = 0.0;
+    double new_y_acc = 0.0;
+    double x_pos = data_x[t_idx]; // data[t_idx];
+    double y_pos = data_y[t_idx];
+    // To update the acc, we need to check every other body distances 
+    for(size_t source_body = 0; source_body < n_of_bodies; source_body++){
+      //distances between the two masses
+      s_idx = (int) source_body * 3;
+      // skip same body to avoid division by 0
+      if (s_idx == t_idx) continue;
+
+      dist_x = data_x[s_idx] - x_pos;
+      dist_y = data_y[s_idx] - y_pos;
+
+      radius = sqrt(dist_y * dist_y + dist_x * dist_x);
+      
+      new_x_acc += mass[source_body] * 2 * dist_x * exp(- a*radius*radius);
+      new_y_acc += mass[source_body] * 2 * dist_y * exp(- a*radius*radius);
+    }
+
+    data_x[t_idx + 2] = new_x_acc / mass[t_idx];
+    data_y[t_idx + 2] = new_y_acc / mass[t_idx];
+  }
+  
+}
+
+//update acceleration with actual conditions
+// approximation of 1/r^4 force + 0 under certain distance
+void acceleration_forthpow_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
+
+  double dist_x, dist_y, radius, cubed_radius;
+  
+  int t_idx, s_idx;
+  for (size_t target_body = 0; target_body < (count / 3); target_body++){
+    
+    t_idx = (int)(target_body * 3) + (int)first;
+    double new_x_acc = 0.0;
+    double new_y_acc = 0.0;
+    double x_pos = data_x[t_idx]; // data[t_idx];
+    double y_pos = data_y[t_idx];
+    // To update the acc, we need to check every other body distances 
+    for(size_t source_body = 0; source_body < n_of_bodies; source_body++){
+      //distances between the two masses
+      s_idx = (int) source_body * 3;
+      // skip same body to avoid division by 0
+      if (s_idx == t_idx) continue;
+
+      dist_x = data_x[s_idx] - x_pos;
+      dist_y = data_y[s_idx] - y_pos;
+      radius = sqrt(dist_y * dist_y + dist_x * dist_x);
+      
+      if (radius > 0.1){
+        forth_pow_radius = radius * radius * radius *radius;
+        new_x_acc += mass[source_body] * dist_x / forth_pow_radius;
+        new_y_acc += mass[source_body] * dist_y / forth_pow_radius;
+      }
+    }
+
+    data_x[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
+    data_y[t_idx + 2] = new_y_acc * GLOBAL_CONSTANT_G;
+  }
+  
+}
+
 //Time-step update, considering acceleration already updated
 void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t count, size_t first){
 
