@@ -39,7 +39,9 @@ int main(int argc, char** argv){
   // }
 
   // WARN: need to set up later, now is like this to remove compiler warnings
-  delta_t  = 1.0;
+  // delta_t should be (?) something like grid_size/(6*num of bodies*average mass), average mass is 1
+  // just for safety we set it up to be one tenth smaller
+  delta_t  = (GRID_MAX-GRID_MIN) / (60 * n_of_bodies);
 
   int split_rank;
   size_t large_body_count, small_body_count, my_count;
