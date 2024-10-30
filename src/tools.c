@@ -20,8 +20,8 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies){
     system->x_data[idx] = (double)rand_r(&seed) / range_pos + GRID_MIN;
     system->y_data[idx] = (double)rand_r(&seed) / range_pos + GRID_MIN;
  
-    system->x_data[idx+1] = ((double)rand_r(&seed) / RAND_MAX - 2) * vel_size;
-    system->y_data[idx+1] = ((double)rand_r(&seed) / RAND_MAX - 2) * vel_size;
+    system->x_data[idx+1] = (2*(double)rand_r(&seed) / RAND_MAX - 1) * vel_size;
+    system->y_data[idx+1] = (2*(double)rand_r(&seed) / RAND_MAX - 1) * vel_size;
  
  
     system->x_data[idx + 2] = 0.0;
@@ -32,7 +32,8 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies){
 
 
 //update acceleration with actual conditions
-void acceleration_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
+// approximation of newton potential
+void acceleration_newton_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
 
   double dist_x, dist_y, radius, cubed_radius;
   
@@ -63,6 +64,43 @@ void acceleration_update(double* data_x, double* data_y, double* mass, size_t n_
 
     data_x[t_idx + 2] = new_x_acc * GLOBAL_CONSTANT_G;
     data_y[t_idx + 2] = new_y_acc * GLOBAL_CONSTANT_G;
+  }
+  
+}
+
+//update acceleration with actual conditions
+// approximation with yukawa potential
+void acceleration_yukawa_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
+
+  double dist_x, dist_y, radius, cubed_radius;
+  
+  int t_idx, s_idx;
+  for (size_t target_body = 0; target_body < (count / 3); target_body++){
+    
+    t_idx = (int)(target_body * 3) + (int)first;
+    double new_x_acc = 0.0;
+    double new_y_acc = 0.0;
+    double x_pos = data_x[t_idx]; // data[t_idx];
+    double y_pos = data_y[t_idx];
+    // To update the acc, we need to check every other body distances 
+    for(size_t source_body = 0; source_body < n_of_bodies; source_body++){
+      //distances between the two masses
+      s_idx = (int) source_body * 3;
+      // skip same body to avoid division by 0
+      if (s_idx == t_idx) continue;
+
+      dist_x = data_x[s_idx] - x_pos;
+      dist_y = data_y[s_idx] - y_pos;
+
+      radius = sqrt(dist_y * dist_y + dist_x * dist_x);
+      cubed_radius = radius * radius * radius;
+      
+      new_x_acc += mass[source_body] * dist_x * exp(- radius) * (radius + 1) / cubed_radius;
+      new_y_acc += mass[source_body] * dist_x * exp(- radius) * (radius + 1) / cubed_radius;
+    }
+
+    data_x[t_idx + 2] = new_x_acc / mass[t_idx];
+    data_y[t_idx + 2] = new_y_acc / mass[t_idx];
   }
   
 }
