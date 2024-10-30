@@ -29,6 +29,6 @@ void acceleration_update(double* data, double* mass, size_t n_of_bodies);
 
 void time_step_update(double *data, size_t n_of_bodies ,double delta_t);
 
-void print_data(const char *filename, body_system *system, size_t n_of_bodies, size_t n_of_iter, int write_header);
+int print_data(const char *filename, body_system **system, size_t n_of_bodies, int iter, int write_header);
 
 #endif

@@ -71,15 +71,7 @@ int main(int argc, char** argv){
     MPI_Bcast(system_status.y_data, 3 * n_of_bodies, MPI_DOUBLE, 0, comm);
   }
 
-  if(rank == 0){
-    FILE *file = fopen("simulation_output.csv", "w");
-    if (file == NULL) {
-      fprintf(stderr, "Error opening file for writing\n");
-      goto cleanup;
-      }
-    fprintf(file, "iteration,body_index,mass,x_pos,x_vel,x_acc,y_pos,y_vel,y_acc\n");
-    fclose(file);
-  }
+  const char *filename = "simulation_output.csv";
 
   for (int iter = 0; iter < n_of_iter; iter++){
     if (rank == 0){
@@ -110,7 +102,7 @@ int main(int argc, char** argv){
     }
     
     if(iter % SAVE_HISTORY == SAVE_HISTORY - 1 && rank == 0){
-      
+      print_data(filename, &system_history, n_of_bodies, iter, (iter < SAVE_HISTORY) ? 1 : 0);
     }
   }
   
