@@ -11,7 +11,7 @@ int main(int argc, char** argv){
   MPI_Comm_size(comm, &comm_sz);
   MPI_Comm_rank(comm, &rank);
   
-  body_system *system_history = NULL, system_status;
+  body_system buffer, system_status;
   if (argc < 3){
     if( rank == 0 ) fprintf(stderr, "Error: using '''%s''' as <n_of_bodies> <n_of_iter>\n", argv[0]);
     goto cleanup;
@@ -37,21 +37,18 @@ int main(int argc, char** argv){
   // just for safety we set it up to be one tenth smaller
   delta_t  = (GRID_MAX - GRID_MIN) / (80 * (double) n_of_bodies);
 
-  int split_rank;
+  int split_rank, *count, *disp;
   size_t large_body_count, small_body_count;
   COMPUTE_BODY_COUNT(n_of_bodies, comm_sz, split_rank, large_body_count, small_body_count);
-  int *count, *disp;
   count = (int*) malloc(comm_sz * sizeof(int));
   disp = (int*) malloc(comm_sz * sizeof(int));
   for (int i = 0; i < comm_sz; i++){
     count[i] = (i < split_rank) ? (int)large_body_count * 3 : (int)small_body_count * 3;
     disp[i] = (i == 0) ? 0 : disp[i - 1] + count [i - 1];
   }
+  
 
-  // if (rank == 0){
-  //   body_system *system_history = (body_system *)malloc(SAVE_HISTORY * sizeof(body_system));
-  //   if (system_history == NULL) goto cleanup;
-  // }
+  if (rank == 0 ) allocate_buffer(&buffer, n_of_bodies);
 
   system_status.mass = (double *) malloc(n_of_bodies * sizeof(double));
   system_status.x_data = (double *) malloc(3 * n_of_bodies * sizeof(double));
@@ -63,14 +60,10 @@ int main(int argc, char** argv){
   if (rank == 0){
     set_initial_conditions(&system_status, n_of_bodies);
       printf("iter_number,body_id, mass, x_pos, x_vel, x_acc, y_pos, y_vel, y_acc\n"); 
-      for (int i = 0; i < n_of_bodies; i++) printf("0,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", i,
-                                                   system_status.mass[i],
-                                                   system_status.x_data[i*3],
-                                                   system_status.x_data[i*3+1],
-                                                   system_status.x_data[i*3+2],
-                                                   system_status.y_data[i*3],
-                                                   system_status.y_data[i*3+1],
-                                                   system_status.y_data[i*3+2]);
+      for (int i = 0; i < n_of_bodies; i++)
+      printf("0,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", i, system_status.mass[i],
+          system_status.x_data[i*3], system_status.x_data[i*3+1], system_status.x_data[i*3+2],
+          system_status.y_data[i*3], system_status.y_data[i*3+1], system_status.y_data[i*3+2]);
   }
 
   MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
@@ -91,19 +84,16 @@ int main(int argc, char** argv){
                   system_status.y_data, count, disp, MPI_DOUBLE, comm);
     
     if (rank == 0) {
-      for (int i = 0; i < n_of_bodies; i++)
-        printf("%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", iter+1, i, system_status.mass[i],
-          system_status.x_data[i*3], system_status.x_data[i*3+1], system_status.x_data[i*3+2],
-          system_status.y_data[i*3], system_status.y_data[i*3+1], system_status.y_data[i*3+2]);
+      // Accumulate data for this step in the buffer
+      accumulate_data(&buffer, iter % SAVE_HISTORY, n_of_bodies, &system_status);
+      if ((iter + 1) % SAVE_HISTORY == 0) {
+        write_data_to_disk(&buffer, n_of_bodies, iter);
+      }
     }
-    // if(iter % SAVE_HISTORY == SAVE_HISTORY - 1 && rank == 0){
-    //   print_data(filename, &system_history, n_of_bodies, iter, (iter < SAVE_HISTORY) ? 1 : 0);
-    // }
   }
   
   
-
-  // if (rank == 0) free(system_history);
+  if (rank == 0) free_buffer(&buffer);
   free(system_status.mass);
   free(system_status.x_data);
   free(system_status.y_data);
@@ -115,7 +105,8 @@ int main(int argc, char** argv){
   return 0;
 
 cleanup:
-  // if ( NULL != system_history) free(system_history);
+  if ( rank == 0 && ( NULL != buffer.mass || NULL != buffer.x_data || NULL != buffer.y_data) )
+    free_buffer(&buffer);
   if ( NULL != system_status.mass) free(system_status.mass);
   if ( NULL != system_status.x_data) free(system_status.x_data);
   if ( NULL != system_status.y_data) free(system_status.y_data);
