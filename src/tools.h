@@ -5,8 +5,9 @@
 
 #define SAVE_HISTORY 50
 #define STORE_VAR 3
-#define GLOBAL_CONSTANT_G 2.5
+#define GLOBAL_CONSTANT_G 2
 #define GRID_MIN 0
+#define GRID_MAX 100
 
 #define COMPUTE_BODY_COUNT( TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX,        \
                                        EARLY_BODY_COUNT, LATE_BODY_COUNT ) \
@@ -16,10 +17,14 @@
         EARLY_BODY_COUNT = EARLY_BODY_COUNT + 1;                           \
     }                                                                      \
 
+// problema:
+// facciamo 2 Allgather per iterazione
+// soluzione:
+// possiamo rendere x_data e y_data solo data, e poi ricontrollare per bene
+// come aggiorniamo le cose
 typedef struct{
   double* mass;
-  double* x_data; // [0]-> x_pos [1]->x_vel [2]->x_acc
-  double* y_data; // [0]-> y_pos [1]->y_vel [2]->y_acc
+  double* data;
 } body_system;
 
 void allocate_buffer(body_system* buffer, size_t n_of_bodies);
@@ -32,7 +37,7 @@ void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter, 
 
 void set_initial_conditions(body_system *system, size_t n_of_bodies);
 
-void acceleration_newton_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first);
+void acceleration_newton_update(double* data, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first);
 
 void time_step_update(double *data, size_t n_of_bodies ,double delta_t, size_t my_count, size_t my_first);
 
