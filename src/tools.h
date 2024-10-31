@@ -4,9 +4,8 @@
 #include <stdlib.h>
 
 #define SAVE_HISTORY 50
-
-#define GLOBAL_CONSTANT_G 2
-#define GRID_MAX 100
+#define STORE_VAR 3
+#define GLOBAL_CONSTANT_G 2.5
 #define GRID_MIN 0
 
 #define COMPUTE_BODY_COUNT( TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX,        \
@@ -29,7 +28,7 @@ void free_buffer(body_system* buffer);
 
 void accumulate_data(body_system* buffer, int buffer_index, size_t n_of_bodies, body_system* system_status);
 
-void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter);
+void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter, const char * filename);
 
 void set_initial_conditions(body_system *system, size_t n_of_bodies);
 

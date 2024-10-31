@@ -35,8 +35,8 @@ void accumulate_data(body_system* buffer, int buffer_index, size_t n_of_bodies, 
     }
 }
 
-void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter) {
-  FILE* file = fopen("output_simulation.csv", (true_iter + 1 == SAVE_HISTORY) ? "w" : "a");
+void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter, const char* filename) {
+  FILE* file = fopen(filename, (true_iter + 1 == SAVE_HISTORY) ? "w" : "a");
   if (!file) {
     perror("Failed to open file for writing");
     return;
@@ -67,9 +67,10 @@ void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter) 
 
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
   unsigned int seed = time(NULL);
-
-  double range_pos = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
-  double vel_size = 5 * (double) n_of_bodies / (GRID_MAX - GRID_MIN);
+  
+  double grid_max = (double) (20 * n_of_bodies);
+  double range_pos = (double) RAND_MAX / (grid_max - GRID_MIN);
+  double vel_size = 5 * (double) n_of_bodies / (grid_max - GRID_MIN);
   
   //double exp_factor;
   int idx;
@@ -248,6 +249,8 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
   int t_idx;
 
   
+  double grid_max = (double) (20 * n_of_bodies);
+  
   for (size_t target_body = 0; target_body < (count / 3); target_body++){
     t_idx = (int)(target_body * 3) + (int) first;
     
@@ -263,8 +266,8 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
       position = 2*GRID_MIN - position;
       velocity = -velocity;
     }
-    else if(position > GRID_MAX){
-      position = 2*GRID_MAX - position;
+    else if(position > grid_max){
+      position = 2*grid_max - position;
       velocity = -velocity;
     }
     
