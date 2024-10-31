@@ -11,6 +11,8 @@ int main(int argc, char** argv){
   MPI_Comm_size(comm, &comm_sz);
   MPI_Comm_rank(comm, &rank);
   
+  int print_iter = 0;
+  double grid_max;
   body_system buffer, system_status;
   if (argc < 4){
     if( rank == 0 ) fprintf(stderr, "Error: using '''%s''' as <n_of_bodies> <n_of_iter> <filename>\n", argv[0]);
@@ -25,6 +27,7 @@ int main(int argc, char** argv){
     if( rank == 0 ) fprintf(stderr, "Error: Invalid number of bodies, it must be >= 3. Aborting...\n");
     goto cleanup;
   }
+  grid_max = (double) (20 * n_of_bodies);
 
   n_of_iter = (size_t) strtol(argv[2], &endptr, 10);
   if (*endptr != '\0' || n_of_iter < 100) {
@@ -32,7 +35,6 @@ int main(int argc, char** argv){
     goto cleanup;
   } 
   
-  double grid_max = (double) (20 * n_of_bodies);
   filename = argv[3];
   // NOTE: delta_t should be (?) something like 
   // grid_size/(6*num of bodies*average mass), average mass is 1
@@ -73,7 +75,6 @@ int main(int argc, char** argv){
   MPI_Bcast(system_status.y_data, 3 * n_of_bodies, MPI_DOUBLE, 0, comm);
 
   // const char *filename = "simulation_output.csv";
-  int print_iter = 0;
   for (int iter = 0; iter < n_of_iter; iter++){
     acceleration_newton_update(system_status.x_data, system_status.y_data, system_status.mass, n_of_bodies, count[rank], disp[rank]);
     
