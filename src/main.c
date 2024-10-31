@@ -73,7 +73,7 @@ int main(int argc, char** argv){
   // const char *filename = "simulation_output.csv";
 
   for (int iter = 0; iter < n_of_iter; iter++){
-    acceleration_update(system_status.x_data, system_status.y_data, system_status.mass, n_of_bodies, count[rank], disp[rank]);
+    acceleration_newton_update(system_status.x_data, system_status.y_data, system_status.mass, n_of_bodies, count[rank], disp[rank]);
     
     time_step_update(system_status.x_data, n_of_bodies, delta_t, count[rank], disp[rank]);
     time_step_update(system_status.y_data, n_of_bodies, delta_t, count[rank], disp[rank]);

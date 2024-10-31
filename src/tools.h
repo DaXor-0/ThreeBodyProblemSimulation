@@ -33,7 +33,7 @@ void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter);
 
 void set_initial_conditions(body_system *system, size_t n_of_bodies);
 
-void acceleration_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first);
+void acceleration_newton_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first);
 
 void time_step_update(double *data, size_t n_of_bodies ,double delta_t, size_t my_count, size_t my_first);
 
