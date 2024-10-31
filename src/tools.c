@@ -171,7 +171,7 @@ void acceleration_yukawa_update(double* data_x, double* data_y, double* mass, si
 // approximation with gaussian potential
 void acceleration_gaussian_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
 
-  double dist_x, dist_y, radius, cubed_radius;
+  double dist_x, dist_y, radius;
   
   int t_idx, s_idx;
   for (size_t target_body = 0; target_body < (count / 3); target_body++){
@@ -193,8 +193,8 @@ void acceleration_gaussian_update(double* data_x, double* data_y, double* mass, 
 
       radius = sqrt(dist_y * dist_y + dist_x * dist_x);
       
-      new_x_acc += mass[source_body] * 2 * dist_x * exp(- a*radius*radius);
-      new_y_acc += mass[source_body] * 2 * dist_y * exp(- a*radius*radius);
+      new_x_acc += mass[source_body] * 2 * dist_x * exp(-radius*radius);
+      new_y_acc += mass[source_body] * 2 * dist_y * exp(-radius*radius);
     }
 
     data_x[t_idx + 2] = new_x_acc / mass[t_idx];
@@ -207,7 +207,7 @@ void acceleration_gaussian_update(double* data_x, double* data_y, double* mass, 
 // approximation of 1/r^4 force + 0 under certain distance
 void acceleration_forthpow_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t count, size_t first){
 
-  double dist_x, dist_y, radius, cubed_radius;
+  double dist_x, dist_y, radius, forth_pow_radius;
   
   int t_idx, s_idx;
   for (size_t target_body = 0; target_body < (count / 3); target_body++){
