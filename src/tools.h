@@ -5,7 +5,7 @@
 
 #define SAVE_HISTORY 50
 
-#define GLOBAL_CONSTANT_G 1
+#define GLOBAL_CONSTANT_G 2
 #define GRID_MAX 100
 #define GRID_MIN 0
 
@@ -23,12 +23,18 @@ typedef struct{
   double* y_data; // [0]-> y_pos [1]->y_vel [2]->y_acc
 } body_system;
 
+void allocate_buffer(body_system* buffer, size_t n_of_bodies);
+
+void free_buffer(body_system* buffer);
+
+void accumulate_data(body_system* buffer, int buffer_index, size_t n_of_bodies, body_system* system_status);
+
+void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter);
+
 void set_initial_conditions(body_system *system, size_t n_of_bodies);
 
 void acceleration_update(double* data_x, double* data_y, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first);
 
 void time_step_update(double *data, size_t n_of_bodies ,double delta_t, size_t my_count, size_t my_first);
-
-int print_data(const char *filename, body_system **system, size_t n_of_bodies, int iter, int write_header);
 
 #endif

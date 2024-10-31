@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -5,14 +6,75 @@
 
 #include "tools.h"
 
+void allocate_buffer(body_system* buffer, size_t n_of_bodies) {
+  buffer->mass = (double*) malloc(SAVE_HISTORY * n_of_bodies * sizeof(double));
+  buffer->x_data = (double*) malloc(3 * SAVE_HISTORY * n_of_bodies * sizeof(double));
+  buffer->y_data = (double*) malloc(3 * SAVE_HISTORY * n_of_bodies * sizeof(double));
+}
+
+void free_buffer(body_system* buffer) {
+  free(buffer->mass);
+  free(buffer->x_data);
+  free(buffer->y_data);
+}
+
+void accumulate_data(body_system* buffer, int buffer_index, size_t n_of_bodies, body_system* system_status) {
+    double* mass_offset = buffer->mass + (ptrdiff_t)(buffer_index * n_of_bodies);
+    double* x_offset = buffer->x_data + (ptrdiff_t)(buffer_index * n_of_bodies * 3);
+    double* y_offset = buffer->y_data + (ptrdiff_t)(buffer_index * n_of_bodies * 3);
+
+    for (int i = 0; i < n_of_bodies; ++i) {
+        mass_offset[i] = system_status->mass[i];
+        x_offset[3 * i] = system_status->x_data[3 * i];
+        x_offset[3 * i + 1] = system_status->x_data[3 * i + 1];
+        x_offset[3 * i + 2] = system_status->x_data[3 * i + 2];
+
+        y_offset[3 * i] = system_status->y_data[3 * i];
+        y_offset[3 * i + 1] = system_status->y_data[3 * i + 1];
+        y_offset[3 * i + 2] = system_status->y_data[3 * i + 2];
+    }
+}
+
+void write_data_to_disk(body_system* buffer, size_t n_of_bodies, int true_iter) {
+  FILE* file = fopen("output_simulation.csv", (true_iter + 1 == SAVE_HISTORY) ? "w" : "a");
+  if (!file) {
+    perror("Failed to open file for writing");
+    return;
+  }
+
+  if (true_iter + 1 == SAVE_HISTORY){
+    // printf("CISNSJANIOHGSIOANGIOASNGIONSAIONGISOANSIONGAKDSJNGJIASB");
+    fprintf(file, "iter_number,body_id, mass, x_pos, x_vel, x_acc, y_pos, y_vel, y_acc\n");
+  }
+
+  for (int step = 0; step < SAVE_HISTORY; ++step) {
+    for (int i = 0; i < n_of_bodies; ++i) {
+      fprintf(file, "%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+        true_iter - SAVE_HISTORY + step + 1, i,
+        buffer->mass[step * n_of_bodies + i],
+        buffer->x_data[(step * n_of_bodies + i) * 3],
+        buffer->x_data[(step * n_of_bodies + i) * 3 + 1],
+        buffer->x_data[(step * n_of_bodies + i) * 3 + 2],
+        buffer->y_data[(step * n_of_bodies + i) * 3],
+        buffer->y_data[(step * n_of_bodies + i) * 3 + 1],
+        buffer->y_data[(step * n_of_bodies + i) * 3 + 2]);
+      }
+    }
+
+    fclose(file);
+}
+
+
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
   unsigned int seed = time(NULL);
 
   double range_pos = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
   double vel_size = 5 * (double) n_of_bodies / (GRID_MAX - GRID_MIN);
   
+  //double exp_factor;
   int idx;
   for (int body = 0; body < n_of_bodies; body++){
+    //exp_factor = pow(10,(double)rand_r(&seed) % 4);
     system->mass[body] = (double)rand_r(&seed) / RAND_MAX;
     
     idx = 3 * body;
@@ -102,27 +164,3 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
 }
 
 
-int print_data(const char *filename, body_system **system, size_t n_of_bodies, int iter, int write_header) {
-  FILE *file = fopen(filename, "a");
-  if (file == NULL) {
-    fprintf(stderr, "Error opening file for appending\n");
-    return -1;
-  }
-
-  if (write_header) {
-    fprintf(file, "iteration,body_index,mass,x_pos,x_vel,x_acc,y_pos,y_vel,y_acc\n");
-  }
-  
-  for (int idx = 0; idx < SAVE_HISTORY; idx++){
-    for (size_t i = 0; i < n_of_bodies; i++) {
-      fprintf(file, "%d, %ld, %lf, %lf, %lf, %lf, %lf, %lf, %lf\n",
-        iter + idx, i, system[idx]->mass[i],
-        system[idx]->x_data[3*i], system[idx]->x_data[3*i + 1], system[idx]->x_data[3*i + 2],
-        system[idx]->y_data[3*i], system[idx]->y_data[3*i + 1], system[idx]->y_data[3*i + 2]);
-    }
-  }
-
-  fclose(file); // Close file after each append
-  
-  return 0;
-}
