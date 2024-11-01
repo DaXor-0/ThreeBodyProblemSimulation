@@ -81,8 +81,8 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
     //update position and velocity
     data[t_idx]   = new_x_pos;
     data[t_idx+1] = new_x_vel;
-    data[t_idx+3] = new_x_pos;
-    data[t_idx+4] = new_x_vel;
+    data[t_idx+3] = new_y_pos;
+    data[t_idx+4] = new_y_vel;
   }
 }
 
