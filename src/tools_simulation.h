@@ -81,9 +81,9 @@ typedef struct{
 
 extern const ranges init_ranges[];
 
-void set_initial_conditions(body_system *system, size_t n_of_bodies);
+void set_initial_conditions(body_system *system, size_t n_of_bodies, double * vel_range);
 
-void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t my_count, size_t my_first);
+void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t my_count, size_t my_first, double vel_range);
 
 int compute_new_accelerations(double* data, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first, accel_t type);
 

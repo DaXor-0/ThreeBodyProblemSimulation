@@ -8,13 +8,13 @@
  * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
  */
 const ranges init_ranges[]={
-  {4,     20.0,   10},
-  {16,    10.0,   7},
-  {64,    5.0,    5},
-  {256,   2.5,    3},
-  {1024,  1.25,   2},
-  {4096,  0.625,  1},
-  {16384, 0.3125, 0.5}
+  {4,     20.0,   10  },
+  {16,    10.0,   5   },
+  {64,    5.0,    3   },
+  {256,   2.5,    1.5 },
+  {1024,  1.25,   1   },
+  {4096,  0.625,  0.5 },
+  {16384, 0.3125, 0.25}
 };
 
 /**
@@ -46,43 +46,46 @@ static inline void get_init_ranges(size_t n_of_bodies, double *mass_range, doubl
  * 
  * @param system Pointer to the body system to initialize.
  * @param n_of_bodies Number of bodies in the system.
+ * @param vel_range Pointer to save velocity_range.
  */
-void set_initial_conditions(body_system *system, size_t n_of_bodies){
+void set_initial_conditions(body_system *system, size_t n_of_bodies, double *vel_range){
   unsigned int seed = time(NULL);
   
-  double mass_range, pos_range, vel_range;
+  double mass_range, pos_range;
   
-  get_init_ranges(n_of_bodies, &mass_range, &vel_range, &pos_range);
+  get_init_ranges(n_of_bodies, &mass_range, vel_range, &pos_range);
 
   int idx;
   for (int body = 0; body < n_of_bodies; body++){
     idx = 6 * body;
     system->mass[body]    = (double) rand_r(&seed) / RAND_MAX * mass_range;
     system->data[idx]     = (double) rand_r(&seed) / pos_range + GRID_MIN;
-    system->data[idx + 1] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_range;
+    system->data[idx + 1] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * *vel_range;
     system->data[idx + 2] = 0.0;
     system->data[idx + 3] = (double) rand_r(&seed) / pos_range + GRID_MIN;
-    system->data[idx + 4] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_range;
+    system->data[idx + 4] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * *vel_range;
     system->data[idx + 5] = 0.0;
   }
 }
 
 
 /**
- * @brief Adjusts position and velocity if a body moves out of grid bounds.
+ * @brief Adjusts position if a body moves out of grid bounds.
  *
  * @note
  * Not inteded to be used outside of the scope of this file
  */
-static inline void check_out_of_bound(double *position, double *velocity){
+static inline int check_out_of_bound(double *position){
   if(*position < GRID_MIN){
     *position = 2 * GRID_MIN - *position;
-    *velocity = - *velocity;
+    return 1;
   } else if(*position > GRID_MAX){
     *position = 2 * GRID_MAX - *position;
-    *velocity = - *velocity;
+    return -1;
   }
+  return 0;
 }
+
 
 /**
  * @brief Updates positions and velocities of bodies based on current acceleration.
@@ -95,14 +98,15 @@ static inline void check_out_of_bound(double *position, double *velocity){
  * @param delta_t Time step for the update.
  * @param count Total data elements to process.
  * @param first Index of the first element to update in this portion.
+ * @param vel_range The range of velocity, needed it out of bound.
  *
  * @note
  * Acceleration must be calculated beforehand
  */
 void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t count,
-                      size_t first){
+                      size_t first, double vel_range){
   double new_x_pos, new_x_vel, new_y_pos, new_y_vel;
-  int t_idx;
+  int t_idx, out[2];
   
   for (size_t target_body = 0; target_body < (count / 6); target_body++){
     t_idx = (int)(target_body * 6) + (int) first;
@@ -113,8 +117,14 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
     new_y_pos = data[t_idx + 3] + data[t_idx+4]*delta_t + 0.5*data[t_idx+5]*delta_t*delta_t;
     new_y_vel = data[t_idx + 4] + data[t_idx+5]*delta_t;
     
-    check_out_of_bound(&new_x_pos, &new_x_vel);
-    check_out_of_bound(&new_y_pos, &new_y_vel);
+    // Check if is in bound, if not warp it back and randomize new velocity
+    out[0] = check_out_of_bound(&new_x_pos);
+    if (out[0] != 0)
+      new_x_vel = (double)rand() / RAND_MAX * vel_range * (double)out[0];
+
+    out[1] = check_out_of_bound(&new_y_pos);
+    if (out[1] != 0)
+      new_x_vel = (double)rand() / RAND_MAX * vel_range * (double)out[1];
 
     //update position and velocity
     data[t_idx]   = new_x_pos;
@@ -243,4 +253,6 @@ double compute_new_delta_t(double* data, size_t n_of_bodies){
   }
 
   return 0.01 * (GRID_MIN - GRID_MAX) / sqrt(max_velocity);
-};
+}
+
+

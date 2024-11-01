@@ -6,7 +6,7 @@
 
 #include "tools_simulation.h"
 
-#define SAVE_HISTORY 50
+#define SAVE_HISTORY 100
 #define STORE_VAR 3
 
 

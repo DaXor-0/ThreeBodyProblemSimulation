@@ -24,12 +24,11 @@ int main(int argc, char** argv){
   size_t large_body_count, small_body_count;
   COMPUTE_BODY_COUNT(n_of_bodies, comm_sz, split_rank, large_body_count, small_body_count);
   count = (int*) malloc(comm_sz * sizeof(int));
-  disp = (int*) malloc(comm_sz * sizeof(int));
+  disp  = (int*) malloc(comm_sz * sizeof(int));
   for (int i = 0; i < comm_sz; i++){
-    count[i] = (i < split_rank) ? (int)large_body_count * 6 : (int)small_body_count * 6;
-    disp[i] = (i == 0) ? 0 : disp[i - 1] + count [i - 1];
+    count[i] = (i < split_rank) ? (int) large_body_count * 6 : (int) small_body_count * 6;
+    disp[i]  = (i == 0) ? 0 : disp[i - 1] + count [i - 1];
   }
-  
 
   if (rank == 0 ){
     ret = allocate_store_buffer(&store_buffer, n_of_bodies);
@@ -42,19 +41,28 @@ int main(int argc, char** argv){
     goto cleanup;
   }
   
+  double vel_range;
   if (rank == 0){
-    set_initial_conditions(&system_status, n_of_bodies);
+    set_initial_conditions(&system_status, n_of_bodies, &vel_range);
     print_status(&system_status, n_of_bodies);
   }
 
   MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
   MPI_Bcast(system_status.data, 6 * n_of_bodies, MPI_DOUBLE, 0, comm);
+  MPI_Bcast(&vel_range, 1, MPI_DOUBLE, 0, comm);
 
   double delta_t;
   for (int iter = 0; iter < n_of_iter; iter++){
-    if (rank == 0 && (iter % STORE_VAR) == 0) {
-      accumulate_data(&store_buffer, print_iter % SAVE_HISTORY, n_of_bodies, &system_status);
-      print_iter++;
+
+    if (rank == 0){
+      if( iter % STORE_VAR == 0) { // accumulate data every STORE_VAR iterations
+        accumulate_data(&store_buffer, print_iter % SAVE_HISTORY, n_of_bodies, &system_status);
+        print_iter++;
+      }
+      if(print_iter + 1 % SAVE_HISTORY == 0) { // write the data to disk every when the buffer is full
+        ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
+        if (ret == -1) goto cleanup;
+      }
     }
     
     compute_new_accelerations(system_status.data, system_status.mass, n_of_bodies,
@@ -62,15 +70,10 @@ int main(int argc, char** argv){
     
     delta_t = compute_new_delta_t(system_status.data, n_of_bodies);
 
-    time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank]);
+    time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank], vel_range);
 
     MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,
                   system_status.data, count, disp, MPI_DOUBLE, comm);
-    
-    if ((print_iter + 1) % SAVE_HISTORY == 0) {
-      ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
-      if (ret == -1) goto cleanup;
-    }
   }
   
   
