@@ -14,10 +14,11 @@ n_of_bodies=128
 iter=20000
 TIMESTAMP=$(date +"%Y_%m_%d___%H:%M:%S")
 filename="./$TIMESTAMP.csv"
+gifname="./$TIMESTAMP.gif"
 
 srun -n 32 ~/ThreeBodyProblemSimulation/simulation.out $n_of_bodies $iter $filename
 
 module load python
 source ~/myvenv/bin/activate
-python ~/ThreeBodyProblemSimulation/plot.py $filename ( $n_of_bodies * 20 )
+python ~/ThreeBodyProblemSimulation/plot.py $filename $gifname
 deactivate

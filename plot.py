@@ -4,9 +4,7 @@ import imageio
 import numpy as np
 import sys
 
-grid_max = 100
-
-def create_n_body_simulation_gif(csv_file_path, output_gif='n_body_simulation.gif'):
+def create_n_body_simulation_gif(csv_file_path, output_gif):
     # Load the CSV file
     try:
         data = pd.read_csv(csv_file_path)
@@ -40,8 +38,8 @@ def create_n_body_simulation_gif(csv_file_path, output_gif='n_body_simulation.gi
 
     # Set up the plot
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_xlim(0, grid_max)
-    ax.set_ylim(0, grid_max)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
     ax.set_aspect('equal')
     ax.set_title('N-Body Simulation')
     ax.set_xlabel('X Position')
@@ -54,8 +52,8 @@ def create_n_body_simulation_gif(csv_file_path, output_gif='n_body_simulation.gi
     for iter_num in iterations:
         # Clear plot for the current frame
         ax.cla()
-        ax.set_xlim(0, grid_max)
-        ax.set_ylim(0, grid_max)
+        ax.set_xlim(0, 100)
+        ax.set_ylim(0, 100)
         ax.set_aspect('equal')
         ax.set_title(f'N-Body Simulation - Iteration {iter_num}')
         ax.set_xlabel('X Position')
@@ -93,4 +91,5 @@ def create_n_body_simulation_gif(csv_file_path, output_gif='n_body_simulation.gi
 # If you want to run the function from the command line:
 if __name__ == "__main__":
     csv_file_path = sys.argv[1] if len(sys.argv) > 1 else 'output_simulation.csv'
-    create_n_body_simulation_gif(csv_file_path)
+    gif_file_path = sys.argv[2] if len(sys.argv) > 2 else 'output_simulation.gif'
+    create_n_body_simulation_gif(csv_file_path, gif_file_path)
