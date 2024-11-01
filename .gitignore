@@ -58,3 +58,6 @@ compile_commands.json
 # Results
 *.gif
 *.csv
+
+# Profiling Results
+scorep*
