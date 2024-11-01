@@ -20,9 +20,6 @@ int main(int argc, char** argv){
   ret = set_inputs(argc, argv, &n_of_bodies, &n_of_iter, &filename);
   if ( ret == -1 ) goto cleanup;
 
-  // NOTE: delta_t should be (?) something like 
-  // grid_size/(6*num of bodies*average mass), average mass is 1
-  // just for safety we set it up to be one tenth smaller
   double delta_t  = (GRID_MAX - GRID_MIN) / (80 * (double) n_of_bodies);
 
   int split_rank, *count, *disp;
@@ -64,6 +61,8 @@ int main(int argc, char** argv){
     compute_new_accelerations(system_status.data, system_status.mass, n_of_bodies,
                         count[rank], disp[rank], NEWTON);
     
+    delta_t = compute_new_delta_t(system_status.data, n_of_bodies);
+
     time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank]);
 
     MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,

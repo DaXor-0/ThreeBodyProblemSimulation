@@ -5,6 +5,43 @@
 #include "tools_simulation.h"
 
 /**
+ * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
+ */
+const ranges init_ranges[]={
+  {4,     20.0,   10},
+  {16,    10.0,   7},
+  {64,    5.0,    5},
+  {256,   2.5,    3},
+  {1024,  1.25,   2},
+  {4096,  0.625,  1},
+  {16384, 0.3125, 0.5}
+};
+
+/**
+ * @brief Retrieves mass, velocity, and position ranges for initializing a system of a given size.
+ *
+ * @param n_of_bodies Number of bodies to initialize.
+ * @param mass_range Pointer to store the mass range for the given number of bodies.
+ * @param vel_range Pointer to store the velocity range for the given number of bodies.
+ * @param pos_range Pointer to store the position range based on grid limits.
+ */
+static inline void get_init_ranges(size_t n_of_bodies, double *mass_range, double *vel_range, double* pos_range){
+  *pos_range = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
+  
+  int num_ranges = sizeof(init_ranges) / sizeof(ranges);
+  for (int idx = 0; idx < num_ranges - 1; idx++){
+    if (n_of_bodies <= init_ranges[idx].bodies){
+      *mass_range = init_ranges[idx].mass_range;
+      *vel_range  = init_ranges[idx].velocity_range;
+      return;
+    }
+  }
+  *mass_range = init_ranges[num_ranges - 1].mass_range;
+  *vel_range  = init_ranges[num_ranges - 1].velocity_range;
+}
+
+
+/**
  * @brief Randomly initializes the system with masses, positions, and velocities for each body.
  * 
  * @param system Pointer to the body system to initialize.
@@ -13,22 +50,23 @@
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
   unsigned int seed = time(NULL);
   
-  double range_pos = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
-  double vel_size = 5 * (double) n_of_bodies / (GRID_MAX - GRID_MIN);
-  // TODO: tune up vel_size and maybe also mass to have more variance
+  double mass_range, pos_range, vel_range;
   
+  get_init_ranges(n_of_bodies, &mass_range, &vel_range, &pos_range);
+
   int idx;
   for (int body = 0; body < n_of_bodies; body++){
     idx = 6 * body;
-    system->mass[body]    = (double) rand_r(&seed) / RAND_MAX;
-    system->data[idx]     = (double) rand_r(&seed) / range_pos + GRID_MIN;
-    system->data[idx + 1] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_size;
+    system->mass[body]    = (double) rand_r(&seed) / RAND_MAX * mass_range;
+    system->data[idx]     = (double) rand_r(&seed) / pos_range + GRID_MIN;
+    system->data[idx + 1] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_range;
     system->data[idx + 2] = 0.0;
-    system->data[idx + 3] = (double) rand_r(&seed) / range_pos + GRID_MIN;
-    system->data[idx + 4] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_size;
+    system->data[idx + 3] = (double) rand_r(&seed) / pos_range + GRID_MIN;
+    system->data[idx + 4] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_range;
     system->data[idx + 5] = 0.0;
   }
 }
+
 
 /**
  * @brief Adjusts position and velocity if a body moves out of grid bounds.
@@ -37,13 +75,13 @@ void set_initial_conditions(body_system *system, size_t n_of_bodies){
  * Not inteded to be used outside of the scope of this file
  */
 static inline void check_out_of_bound(double *position, double *velocity){
-    if(*position < GRID_MIN){
-      *position = 2 * GRID_MIN - *position;
-      *velocity = - *velocity;
-    } else if(*position > GRID_MAX){
-      *position = 2 * GRID_MAX - *position;
-      *velocity = - *velocity;
-    }
+  if(*position < GRID_MIN){
+    *position = 2 * GRID_MIN - *position;
+    *velocity = - *velocity;
+  } else if(*position > GRID_MAX){
+    *position = 2 * GRID_MAX - *position;
+    *velocity = - *velocity;
+  }
 }
 
 /**
@@ -81,8 +119,8 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
     //update position and velocity
     data[t_idx]   = new_x_pos;
     data[t_idx+1] = new_x_vel;
-    data[t_idx+3] = new_x_pos;
-    data[t_idx+4] = new_x_vel;
+    data[t_idx+3] = new_y_pos;
+    data[t_idx+4] = new_y_vel;
   }
 }
 
@@ -185,3 +223,23 @@ int compute_new_accelerations(double* data, double* mass, size_t n_of_bodies,
   return 0;
 }
 
+/**
+ * @brief Calculates an appropriate time step for the simulation based on the maximum velocity.
+ *
+ * The function computes the largest velocity component across all bodies and derives a stable time step.
+ *
+ * @param data Array of body data containing positions, velocities, and accelerations.
+ * @param n_of_bodies Total number of bodies in the system.
+ * @return double Suggested time step for the simulation.
+ */
+double compute_new_delta_t(double* data, size_t n_of_bodies){
+  size_t idx = 0;
+  double this_velocity, max_velocity = 0.0;
+  
+  for(size_t body = 0; body < n_of_bodies; body++){
+    idx = body * 6;
+    this_velocity = data[idx + 1] * data[idx + 1] + data[idx + 4] * data[idx + 4];
+    if (this_velocity > max_velocity) max_velocity = this_velocity;
+  }
+  return 0.1 * (GRID_MIN - GRID_MAX) / max_velocity;
+};
