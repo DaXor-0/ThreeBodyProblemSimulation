@@ -20,8 +20,6 @@ int main(int argc, char** argv){
   ret = set_inputs(argc, argv, &n_of_bodies, &n_of_iter, &filename);
   if ( ret == -1 ) goto cleanup;
 
-  double delta_t  = (GRID_MAX - GRID_MIN) / (80 * (double) n_of_bodies);
-
   int split_rank, *count, *disp;
   size_t large_body_count, small_body_count;
   COMPUTE_BODY_COUNT(n_of_bodies, comm_sz, split_rank, large_body_count, small_body_count);
@@ -52,6 +50,7 @@ int main(int argc, char** argv){
   MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
   MPI_Bcast(system_status.data, 6 * n_of_bodies, MPI_DOUBLE, 0, comm);
 
+  double delta_t;
   for (int iter = 0; iter < n_of_iter; iter++){
     if (rank == 0 && (iter % STORE_VAR) == 0) {
       accumulate_data(&store_buffer, print_iter % SAVE_HISTORY, n_of_bodies, &system_status);
