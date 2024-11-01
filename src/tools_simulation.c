@@ -242,5 +242,5 @@ double compute_new_delta_t(double* data, size_t n_of_bodies){
     if (this_velocity > max_velocity) max_velocity = this_velocity;
   }
 
-  return 0.1 * (GRID_MIN - GRID_MAX) / sqrt(max_velocity);
+  return 0.01 * (GRID_MIN - GRID_MAX) / sqrt(max_velocity);
 };

@@ -34,7 +34,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
     data_dict = {iter_num: iter_data for iter_num, iter_data in data.groupby('iter_number')}
 
     # Pre-calculate marker sizes
-    marker_sizes = {body_id: mass * 10 for body_id, mass in zip(data['body_id'], data['mass'])}
+    marker_sizes = {body_id: mass for body_id, mass in zip(data['body_id'], data['mass'])}
 
     # Set up the plot
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -83,7 +83,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
         frames.append(image)
 
     # Create GIF
-    imageio.mimsave(output_gif, frames, fps=1, quality=8)
+    imageio.mimsave(output_gif, frames, fps=3, quality=8)
     plt.close(fig)
 
     print(f"GIF saved as {output_gif}")
