@@ -3,6 +3,14 @@
 
 #include <stdlib.h>
 
+// #define GRID_MAX 400 <- works for 4 bodies
+// #define GRID_MAX 800 <- works for 16 bodies
+#define GRID_MAX 1600
+#define GRID_MIN 0
+
+#define GLOBAL_CONSTANT_G   100
+#define FORTH_POW_THRESHOLD 0.1
+
 /**
  * @brief Distributes bodies across processes for load balancing.
  *
@@ -16,14 +24,6 @@
  * @param SPLIT_INDEX [out] Number of processes with one extra body.
  * @param EARLY_BODY_COUNT [out] Bodies assigned to the first `SPLIT_INDEX` processes.
  * @param LATE_BODY_COUNT [out] Bodies assigned to remaining processes.
- *
- * @example
- * ```
- * size_t TOTAL_BODY_COUNT = 10;
- * int COMM_SZ = 3;
- * size_t SPLIT_INDEX, EARLY_BODY_COUNT, LATE_BODY_COUNT;
- * COMPUTE_BODY_COUNT(TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX, EARLY_BODY_COUNT, LATE_BODY_COUNT);
- * ```
  */
 #define COMPUTE_BODY_COUNT( TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX,   \
                                   EARLY_BODY_COUNT, LATE_BODY_COUNT ) \
@@ -32,12 +32,6 @@
   if (0 != SPLIT_INDEX) {                                             \
     EARLY_BODY_COUNT = EARLY_BODY_COUNT + 1;                          \
   }                                                                   \
-
-#define GRID_MAX 100
-#define GRID_MIN 0
-
-#define GLOBAL_CONSTANT_G   1.0
-#define FORTH_POW_THRESHOLD 0.1
 
 /**
  * @brief Enum defining different types of acceleration laws.

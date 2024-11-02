@@ -34,12 +34,12 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
     data_dict = {iter_num: iter_data for iter_num, iter_data in data.groupby('iter_number')}
 
     # Pre-calculate marker sizes
-    marker_sizes = {body_id: mass for body_id, mass in zip(data['body_id'], data['mass'])}
+    marker_sizes = {body_id: mass for body_id, mass in zip(data['body_id'],data['mass'])}
 
     # Set up the plot
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
+    ax.set_xlim(0, 1600)
+    ax.set_ylim(0, 1600)
     ax.set_aspect('equal')
     ax.set_title('N-Body Simulation')
     ax.set_xlabel('X Position')
@@ -52,10 +52,10 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
     for iter_num in iterations:
         # Clear plot for the current frame
         ax.cla()
-        ax.set_xlim(0, 100)
-        ax.set_ylim(0, 100)
+        ax.set_xlim(0, 1600)
+        ax.set_ylim(0, 1600)
         ax.set_aspect('equal')
-        ax.set_title(f'N-Body Simulation - Iteration {iter_num}')
+        ax.set_title(f'N-Body Simulation - time elapsed {iter_num/4:.2f}s')
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
 
@@ -72,7 +72,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
                 y_pos = body_data['y_pos']
 
                 # Set marker size, defaulting to 5 if the body_id is not in marker_sizes
-                marker_size = marker_sizes.get(body_id, 5)
+                marker_size = np.sqrt(marker_sizes.get(body_id, 5));
                 
                 # Plot the body
                 ax.plot(x_pos, y_pos, 'o', markersize=marker_size, label=f'Body {body_id}' if iter_num == iterations[0] else "")
@@ -83,7 +83,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
         frames.append(image)
 
     # Create GIF
-    imageio.mimsave(output_gif, frames, fps=3, quality=8)
+    imageio.mimsave(output_gif, frames, fps=10, quality=8)
     plt.close(fig)
 
     print(f"GIF saved as {output_gif}")

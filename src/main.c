@@ -1,9 +1,9 @@
 #include <stdio.h>
 #include <mpi.h>
+#include <time.h>
 
 #include "tools_simulation.h"
 #include "utils.h"
-
 
 int main(int argc, char** argv){
   MPI_Init(NULL, NULL);
@@ -13,10 +13,9 @@ int main(int argc, char** argv){
   MPI_Comm_rank(comm, &rank);
   
   body_system store_buffer, system_status;
-  int print_iter = 0, ret;
+  int ret;
   size_t n_of_bodies, n_of_iter;
   char* filename;
-  
   ret = set_inputs(argc, argv, &n_of_bodies, &n_of_iter, &filename);
   if ( ret == -1 ) goto cleanup;
 
@@ -42,6 +41,7 @@ int main(int argc, char** argv){
   }
   
   double vel_range;
+  srand(time(0));
   if (rank == 0){
     set_initial_conditions(&system_status, n_of_bodies, &vel_range);
     print_status(&system_status, n_of_bodies);
@@ -51,24 +51,27 @@ int main(int argc, char** argv){
   MPI_Bcast(system_status.data, 6 * n_of_bodies, MPI_DOUBLE, 0, comm);
   MPI_Bcast(&vel_range, 1, MPI_DOUBLE, 0, comm);
 
-  double delta_t;
+  int print_iter = 0;
+  double delta_t, elapsed_time = 0;
   for (int iter = 0; iter < n_of_iter; iter++){
-
-    if (rank == 0){
-      if( iter % STORE_VAR == 0) { // accumulate data every STORE_VAR iterations
+    delta_t = compute_new_delta_t(system_status.data, n_of_bodies);
+    elapsed_time += delta_t;
+    if(rank == 0){
+      // accumulate data every STORE_VAR iterations
+      if(elapsed_time >  print_iter * PRINT_INTERVAL) { 
         accumulate_data(&store_buffer, print_iter % SAVE_HISTORY, n_of_bodies, &system_status);
         print_iter++;
-      }
-      if(print_iter + 1 % SAVE_HISTORY == 0) { // write the data to disk every when the buffer is full
-        ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
-        if (ret == -1) goto cleanup;
+        // write the data to disk every when the buffer is full
+        if( print_iter % SAVE_HISTORY == 0) {
+          ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
+          if (ret == -1) goto cleanup;
+        }
       }
     }
     
     compute_new_accelerations(system_status.data, system_status.mass, n_of_bodies,
                         count[rank], disp[rank], NEWTON);
     
-    delta_t = compute_new_delta_t(system_status.data, n_of_bodies);
 
     time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank], vel_range);
 
@@ -76,6 +79,7 @@ int main(int argc, char** argv){
                   system_status.data, count, disp, MPI_DOUBLE, comm);
   }
   
+  if(rank == 0) printf("%.3f %.3f\n", delta_t, elapsed_time);
   
   if (rank == 0) free_store_buffer(&store_buffer);
   free(system_status.mass);

@@ -6,8 +6,8 @@
 
 #include "tools_simulation.h"
 
-#define SAVE_HISTORY 100
-#define STORE_VAR 3
+#define SAVE_HISTORY    100
+#define PRINT_INTERVAL 0.25
 
 
 /**
@@ -129,20 +129,20 @@ static inline void accumulate_data(body_system* store_buffer, int buffer_index, 
  *
  * @param store_buffer Pointer to the buffer containing the stored data.
  * @param n_of_bodies The number of bodies in the system.
- * @param true_iter The current iteration number.
+ * @param print_iter The current iteration number.
  * @param filename The name of the file to write the data to.
  * 
  * @return 0 on success, -1 on file I/O error.
  */
-static inline int write_data_to_disk(body_system* store_buffer, size_t n_of_bodies, int true_iter, const char* filename) {
-  FILE* file = fopen(filename, (true_iter + 1 == SAVE_HISTORY) ? "w" : "a");
+static inline int write_data_to_disk(body_system* store_buffer, size_t n_of_bodies, int print_iter, const char* filename) {
+  FILE* file = fopen(filename, (print_iter == SAVE_HISTORY) ? "w" : "a");
   if (!file) {
     fprintf(stderr, "Failed to open file for writing");
     return -1;
   }
   
   // If file is opened for the first time, write a legenda of the values
-  if (true_iter + 1 == SAVE_HISTORY){
+  if (print_iter == SAVE_HISTORY){
     // printf("CISNSJANIOHGSIOANGIOASNGIONSAIONGISOANSIONGAKDSJNGJIASB");
     fprintf(file, "iter_number,body_id, mass, x_pos, x_vel, x_acc, y_pos, y_vel, y_acc\n");
   }
@@ -152,7 +152,7 @@ static inline int write_data_to_disk(body_system* store_buffer, size_t n_of_bodi
     for (int i = 0; i < n_of_bodies; ++i) {
       iter_idx = step * n_of_bodies + i;
       fprintf(file, "%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
-        true_iter - SAVE_HISTORY + step + 1, i,
+        print_iter - SAVE_HISTORY + step + 1, i,
         store_buffer->mass[ iter_idx ],
         store_buffer->data[ iter_idx * 6],      // x_pos
         store_buffer->data[ iter_idx * 6 + 1],  // x_vel
