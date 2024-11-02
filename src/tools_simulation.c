@@ -24,7 +24,7 @@ const ranges init_ranges[]={
  *
  * @param n_of_bodies Number of bodies to initialize.
  */
-static inline void get_init_ranges(size_t n_of_bodies){
+void get_init_ranges(size_t n_of_bodies){
   int num_ranges = sizeof(init_ranges) / sizeof(ranges);
   for (int idx = 0; idx < num_ranges - 1; idx++){
     if (n_of_bodies <= init_ranges[idx].bodies){
@@ -92,8 +92,6 @@ static inline int check_out_of_bound(double *position){
  * @param data Array of body data (positions, velocities, accelerations).
  * @param n_of_bodies Total number of bodies.
  * @param delta_t Time step for the update.
- * @param count Total data elements to process.
- * @param first Index of the first element to update in this portion.
  *
  * @note
  * Acceleration must be calculated beforehand
@@ -177,8 +175,6 @@ static inline void acceleration_update(double* acc, double mass, double dist, do
  * @param data Array of body data (positions, velocities, accelerations).
  * @param mass Array of masses for each body.
  * @param n_of_bodies Total number of bodies.
- * @param my_count Number of elements to process for this rank.
- * @param my_first Index of the first element for this rank.
  * @param type Acceleration model type.
  * 
  * @return int Status code (0 if successful, -1 if error).

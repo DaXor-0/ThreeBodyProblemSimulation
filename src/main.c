@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "tools_simulatio.h"
+#include "tools_simulation.h"
 #include "utils.h"
 
 int main(int argc, char *argv[]){
@@ -36,10 +36,10 @@ int main(int argc, char *argv[]){
       
     // accumulate data every STORE_VAR iterations
     if(elapsed_time >  print_iter * PRINT_INTERVAL) { 
-      accumulate_data(&store_buffer, print_iter % SAVE_HISTORY, n_of_bodies, &system_status);
+      accumulate_data(&store_buffer, print_iter % TMP_BUF_SIZE, n_of_bodies, &system_status);
       print_iter++;
       // write the data to disk every when the buffer is full
-      if( print_iter % SAVE_HISTORY == 0) {
+      if( print_iter % TMP_BUF_SIZE == 0) {
         ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
         if (ret == -1) goto cleanup;
       }
@@ -47,15 +47,13 @@ int main(int argc, char *argv[]){
 
     compute_new_accelerations(system_status.data, system_status.mass, n_of_bodies, NEWTON);
 
-    time_step_update(system_status.data, system_status.mass, n_of_bodies, delta_t);
+    time_step_update(system_status.data, n_of_bodies, delta_t);
   }
 
   printf("%.3f %.3f\n", delta_t, elapsed_time);
   free_store_buffer(&store_buffer);
   free(system_status.mass);
   free(system_status.data);
-  free(count);
-  free(disp);
 
   return 0;
 

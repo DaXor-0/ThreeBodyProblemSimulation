@@ -3,9 +3,6 @@
 
 #include <stdlib.h>
 
-// #define GRID_MAX 400 <- works for 4 bodies
-// #define GRID_MAX 800 <- works for 16 bodies
-#define GRID_MAX 1600
 #define GRID_MIN 0
 
 #define GLOBAL_CONSTANT_G   100
@@ -55,6 +52,8 @@ typedef struct{
 extern double mass_range, vel_range, grid_max;
 
 extern const ranges init_ranges[];                                                              \
+
+void get_init_ranges(size_t n_of_bodies);
 
 void set_initial_conditions(body_system *system, size_t n_of_bodies);
 
