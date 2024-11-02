@@ -10,7 +10,7 @@ double mass_range, vel_range, grid_max;
  * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
  */
 const ranges init_ranges[]={
-  {4,     60.0,   10     , 200},
+  {4,     60.0,   15     , 200},
   {16,    60.0,   5      , 400},
   {64,    60.0,   5      , 800},
   {256,   60.0,   4      , 1600},
