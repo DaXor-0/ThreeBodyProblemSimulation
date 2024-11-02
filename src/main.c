@@ -49,9 +49,16 @@ int main(int argc, char *argv[]){
 
     time_step_update(system_status.data, n_of_bodies, delta_t);
   }
+<<<<<<< HEAD
 
   printf("%.3f %.3f\n", delta_t, elapsed_time);
   free_store_buffer(&store_buffer);
+=======
+  
+  if(rank == 0) printf("\nLast delta_t is: %.5f\n TOTAL ELAPSED TIME:%.3f\n", delta_t, elapsed_time);
+  
+  if (rank == 0) free_store_buffer(&store_buffer);
+>>>>>>> main
   free(system_status.mass);
   free(system_status.data);
 

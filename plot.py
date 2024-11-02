@@ -33,8 +33,9 @@ def create_n_body_simulation_gif(csv_file_path, output_gif, grid_dim):
     # Preprocess data: create a dictionary with data for each iteration
     data_dict = {iter_num: iter_data for iter_num, iter_data in data.groupby('iter_number')}
 
+    marker_scaling = np.log2(len(body_ids))/len(body_ids)
     # Pre-calculate marker sizes
-    marker_sizes = {body_id: mass for body_id, mass in zip(data['body_id'],data['mass'])}
+    marker_sizes = {body_id: marker_scaling*mass for body_id, mass in zip(data['body_id'],data['mass'])}
 
     # Set up the plot
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -55,7 +56,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif, grid_dim):
         ax.set_xlim(0, grid_dim)
         ax.set_ylim(0, grid_dim)
         ax.set_aspect('equal')
-        ax.set_title(f'N-Body Simulation - time elapsed {iter_num/4:.2f}s')
+        ax.set_title(f'{len(body_ids)}-Body Simulation - time elapsed {iter_num/8:.1f}s')
         ax.set_xlabel('X Position')
         ax.set_ylabel('Y Position')
 
