@@ -21,7 +21,7 @@ int main(int argc, char** argv){
 
   int split_rank, *count, *disp;
   size_t large_body_count, small_body_count;
-  COMPUTE_BODY_COUNT(n_of_bodies, comm_sz, split_rank, large_body_count, small_body_count);
+  compute_body_count(n_of_bodies, comm_sz, &split_rank, &large_body_count, &small_body_count);
   count = (int*) malloc(comm_sz * sizeof(int));
   disp  = (int*) malloc(comm_sz * sizeof(int));
   for (int i = 0; i < comm_sz; i++){
@@ -41,6 +41,7 @@ int main(int argc, char** argv){
   }
   
   srand(time(0));
+  get_init_ranges(n_of_bodies);
   if (rank == 0){
     set_initial_conditions(&system_status, n_of_bodies);
     print_status(&system_status, n_of_bodies);

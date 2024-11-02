@@ -34,7 +34,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif, grid_dim):
     data_dict = {iter_num: iter_data for iter_num, iter_data in data.groupby('iter_number')}
 
     # Pre-calculate marker sizes
-    marker_sizes = {body_id: np.sqrt(mass) for body_id, mass in zip(data['body_id'],data['mass'])}
+    marker_sizes = {body_id: mass for body_id, mass in zip(data['body_id'],data['mass'])}
 
     # Set up the plot
     fig, ax = plt.subplots(figsize=(6, 6))
@@ -92,5 +92,5 @@ def create_n_body_simulation_gif(csv_file_path, output_gif, grid_dim):
 if __name__ == "__main__":
     csv_file_path = sys.argv[1] if len(sys.argv) > 1 else 'output_simulation.csv'
     gif_file_path = sys.argv[2] if len(sys.argv) > 2 else 'output_simulation.gif'
-    grid_dim = sys.argv[3]      if len(sys.argv) > 3 else 400
+    grid_dim = int(sys.argv[3]) if len(sys.argv) > 3 else 200
     create_n_body_simulation_gif(csv_file_path, gif_file_path, grid_dim)

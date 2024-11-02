@@ -5,7 +5,7 @@
 
 // #define GRID_MAX 400 <- works for 4 bodies
 // #define GRID_MAX 800 <- works for 16 bodies
-#define GRID_MAX 1600
+// #define GRID_MAX 1600
 #define GRID_MIN 0
 
 #define GLOBAL_CONSTANT_G   100
@@ -52,31 +52,65 @@ typedef struct{
   const double grid_size;
 } ranges;
 
-extern double mass_range, vel_range, grid_max;
 
-extern const ranges init_ranges[];
+/**
+ * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
+ */
+static const ranges init_ranges[]={
+  {4,     60.0,   15     , 200},
+  {16,    60.0,   5      , 400},
+  {64,    60.0,   5      , 800},
+  {256,   2.5,    1.25   , 1600},
+  {1024,  0.05,   0.625  , 3200},
+  {4096,  0.01,   0.3125 , 6400},
+  {16384, 0.002,  0.15625, 12800}
+};
+
+/**
+ * @brief Global variables to set up ranges of mass, velocity and grid size
+ */
+double mass_range, vel_range, grid_max;
+
+/**
+ * @brief Retrieves mass, velocity, and position ranges for initializing a system of a given size.
+ *
+ * @param n_of_bodies Number of bodies to initialize.
+ */
+static inline void get_init_ranges(size_t n_of_bodies){
+  int num_ranges = sizeof(init_ranges) / sizeof(ranges);
+  for (int idx = 0; idx < num_ranges - 1; idx++){
+    if (n_of_bodies <= init_ranges[idx].bodies){
+      mass_range = init_ranges[idx].mass_range;
+      vel_range  = init_ranges[idx].velocity_range;
+      grid_max   = init_ranges[idx].grid_size;
+      return;
+    }
+  }
+  mass_range = init_ranges[num_ranges - 1].mass_range;
+  vel_range  = init_ranges[num_ranges - 1].velocity_range;
+  grid_max   = init_ranges[num_ranges - 1].grid_size;
+}
 
 /**
  * @brief Distributes bodies across processes for load balancing.
  *
- * This macro divides `TOTAL_BODY_COUNT` bodies among `COMM_SZ` processes, assigning the
- * first `SPLIT_INDEX` processes `EARLY_BODY_COUNT` bodies, and the remaining processes 
- * `LATE_BODY_COUNT` bodies. If `TOTAL_BODY_COUNT` is not divisible by `COMM_SZ`, the first 
- * `SPLIT_INDEX` processes handle one extra body.
- *
- * @param TOTAL_BODY_COUNT [in] Total number of bodies.
- * @param COMM_SZ [in] Total number of processes.
- * @param SPLIT_INDEX [out] Number of processes with one extra body.
- * @param EARLY_BODY_COUNT [out] Bodies assigned to the first `SPLIT_INDEX` processes.
- * @param LATE_BODY_COUNT [out] Bodies assigned to remaining processes.
+ * @param n_of_bodies [in] Total number of bodies.
+ * @param comm_sz [in] Total number of processes.
+ * @param split_index [out] Index of first late_body_count rank.
+ * @param early_body_count [out] Bodies assigned to the first `split_index` processes.
+ * @param late_body_count [out] Bodies assigned to remaining processes.
  */
-#define COMPUTE_BODY_COUNT( TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX,   \
-                                  EARLY_BODY_COUNT, LATE_BODY_COUNT ) \
-  EARLY_BODY_COUNT = LATE_BODY_COUNT = TOTAL_BODY_COUNT / COMM_SZ;    \
-  SPLIT_INDEX = TOTAL_BODY_COUNT % COMM_SZ;                           \
-  if (0 != SPLIT_INDEX) {                                             \
-    EARLY_BODY_COUNT = EARLY_BODY_COUNT + 1;                          \
-  }                                                                   \
+static inline void compute_body_count(size_t n_of_bodies, int comm_sz, int *split_index, 
+                        size_t *early_body_count, size_t *late_body_count) {
+  *early_body_count = *late_body_count = n_of_bodies / (size_t)comm_sz;
+
+  *split_index = n_of_bodies % comm_sz;
+
+  // If there are any extra bodies, assign one to each of the first `split_index` processes
+  if (*split_index != 0) {
+    (*early_body_count)++;
+  }
+}
 
 void set_initial_conditions(body_system *system, size_t n_of_bodies);
 

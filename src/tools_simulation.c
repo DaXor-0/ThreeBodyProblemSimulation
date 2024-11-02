@@ -4,41 +4,6 @@
 
 #include "tools_simulation.h"
 
-double mass_range, vel_range, grid_max;
-
-/**
- * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
- */
-const ranges init_ranges[]={
-  {4,     60.0,   10     , 400},
-  {16,    60.0,   5      , 800},
-  {64,    60.0,   5      , 1600},
-  {256,   2.5,    1.25   , 3200},
-  {1024,  0.05,   0.625  , 6400},
-  {4096,  0.01,   0.3125 , 12800},
-  {16384, 0.002,  0.15625, 25600}
-};
-
-/**
- * @brief Retrieves mass, velocity, and position ranges for initializing a system of a given size.
- *
- * @param n_of_bodies Number of bodies to initialize.
- */
-static inline void get_init_ranges(size_t n_of_bodies){
-  int num_ranges = sizeof(init_ranges) / sizeof(ranges);
-  for (int idx = 0; idx < num_ranges - 1; idx++){
-    if (n_of_bodies <= init_ranges[idx].bodies){
-      mass_range = init_ranges[idx].mass_range;
-      vel_range  = init_ranges[idx].velocity_range;
-      grid_max   = init_ranges[idx].grid_size;
-      return;
-    }
-  }
-  mass_range = init_ranges[num_ranges - 1].mass_range;
-  vel_range  = init_ranges[num_ranges - 1].velocity_range;
-  grid_max   = init_ranges[num_ranges - 1].grid_size;
-}
-
 
 /**
  * @brief Randomly initializes the system with masses, positions, and velocities for each body.
@@ -47,7 +12,6 @@ static inline void get_init_ranges(size_t n_of_bodies){
  * @param n_of_bodies Number of bodies in the system.
  */
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
-  get_init_ranges(n_of_bodies);
 
   double pos_range = (double) RAND_MAX / (grid_max - GRID_MIN);
   
