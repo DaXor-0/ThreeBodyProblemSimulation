@@ -1,5 +1,5 @@
 MPICC = mpicc
-CFLAGS_MPI = -O3 -Wall
+CFLAGS_MPI = -fopenmp -O3 -Wall
 LINK_FLAGS = -lm
 
 SRC_DIR = src
