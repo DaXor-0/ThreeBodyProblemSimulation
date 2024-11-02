@@ -46,16 +46,20 @@ int main(int argc, char** argv){
     print_status(&system_status, n_of_bodies);
   }
 
-  MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
-  MPI_Bcast(system_status.pos, 2 * n_of_bodies, MPI_DOUBLE, 0, comm);
-  MPI_Bcast(system_status.vel, 2 * n_of_bodies, MPI_DOUBLE, 0, comm);
+  ret = MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
+  if (ret != MPI_SUCCESS) goto cleanup;
+  ret = MPI_Bcast(system_status.pos, 2 * n_of_bodies, MPI_DOUBLE, 0, comm);
+  if (ret != MPI_SUCCESS) goto cleanup;
+  ret = MPI_Bcast(system_status.vel, 2 * n_of_bodies, MPI_DOUBLE, 0, comm);
+  if (ret != MPI_SUCCESS) goto cleanup;
 
   int print_iter = 0;
   double delta_t, elapsed_time = 0;
   for (int iter = 0; iter < n_of_iter; iter++){
     // delta_t is calculated at each iteration based on highest velocity body
     delta_t = compute_partial_delta_t(system_status.vel, count[rank], disp[rank]);
-    MPI_Allreduce(MPI_IN_PLACE, &delta_t, 1, MPI_DOUBLE, MPI_MIN, comm);
+    ret = MPI_Allreduce(MPI_IN_PLACE, &delta_t, 1, MPI_DOUBLE, MPI_MIN, comm);
+    if (ret != MPI_SUCCESS) goto cleanup;
     elapsed_time += delta_t;
 
     // rank 0 accumulates data every PRINT_INTERVAL elapsed time
@@ -77,8 +81,9 @@ int main(int argc, char** argv){
                        n_of_bodies, delta_t, count[rank], disp[rank]);
     
     // Synchronize only the positions, acc ad velocity remains private data of the process
-    MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,
+    ret = MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,
                   system_status.pos, count, disp, MPI_DOUBLE, comm);
+    if (ret != MPI_SUCCESS) goto cleanup;
   }
   
   if(rank == 0) printf("\nLast delta_t is: %.5f\n TOTAL ELAPSED (simulation) TIME:%.3f\n", delta_t, elapsed_time);
