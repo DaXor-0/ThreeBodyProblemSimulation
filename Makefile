@@ -16,7 +16,7 @@ all: $(MAIN_EXEC)
 
 # Build the main test executable with mpicc
 $(MAIN_EXEC): $(OBJS)
-	$(MPICC) $(OBJS) -o $(MAIN_EXEC) $(LINK_FLAGS)
+	$(MPICC) $(CFLAGS_MPI) $(OBJS) -o $(MAIN_EXEC) $(LINK_FLAGS)
 
 # Build object files for the source files in the src directory with mpicc
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
