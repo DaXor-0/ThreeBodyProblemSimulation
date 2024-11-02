@@ -29,7 +29,7 @@ static inline int set_inputs(int argc, char **argv, size_t *n_of_bodies, size_t 
 
   char *endptr;
   *n_of_bodies = (size_t) strtol(argv[1], &endptr, 10);
-  if (*endptr != '\0' || *n_of_bodies < 3) {
+  if (*endptr != '\0' || *n_of_bodies < 2) {
     fprintf(stderr, "Error: Invalid number of bodies, it must be >= 3. Aborting...\n");
     return -1;
   }
