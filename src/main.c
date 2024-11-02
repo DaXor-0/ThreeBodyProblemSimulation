@@ -33,7 +33,7 @@ int main(int argc, char** argv){
   system_status.mass = (double *) malloc(n_of_bodies * sizeof(double));
   system_status.pos = (double *) malloc(2 * n_of_bodies * sizeof(double));
   system_status.vel = (double *) malloc(2 * n_of_bodies * sizeof(double));
-  system_status.acc = (double *) calloc(sizeof(double), 2 * n_of_bodies);
+  system_status.acc = (double *) calloc(2 * n_of_bodies, sizeof(double));
   if (system_status.mass == NULL || system_status.pos == NULL ||
     system_status.vel == NULL || system_status.acc == NULL){
     goto cleanup;
