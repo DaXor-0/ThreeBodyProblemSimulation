@@ -73,7 +73,7 @@ int main(int argc, char** argv){
                   system_status.data, count, disp, MPI_DOUBLE, comm);
   }
   
-  if(rank == 0) printf("\nLast delta_t is: %.5f\n TOTAL ELAPSED TIME:%.3f\n", delta_t, elapsed_time);
+  if(rank == 0) printf("\nLast delta_t is: %.5f\n TOTAL ELAPSED (simulation) TIME:%.3f\n", delta_t, elapsed_time);
   
   if (rank == 0) free_store_buffer(&store_buffer);
   free(system_status.mass);

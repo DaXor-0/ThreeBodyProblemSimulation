@@ -9,13 +9,13 @@
  * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
  */
 const ranges init_ranges[]={
-  {4,     60.0,   15     , 200},
-  {16,    60.0,   5      , 400},
-  {64,    60.0,   5      , 800},
-  {256,   60.0,   4      , 1600},
-  {1024,  60.0,   2.5    , 3200},
-  {4096,  0.01,   0.3125 , 6400},
-  {16384, 0.002,  0.15625, 12800}
+  {4,     60.0,  15   , 200},
+  {16,    60.0,  5    , 400},
+  {64,    60.0,  5    , 800},
+  {256,   60.0,  4    , 1600},  // don't print gif after this, it might require a loooot of time
+  {1024,  30.0,  2.5  , 3200},
+  {4096,  30.0,  2.5  , 6400},
+  {16384, 30.0,  1.0  , 12800}
 };
 
 
