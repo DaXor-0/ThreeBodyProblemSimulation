@@ -33,7 +33,7 @@ int main(int argc, char** argv){
   system_status.mass = (double *) malloc(n_of_bodies * sizeof(double));
   system_status.pos = (double *) malloc(2 * n_of_bodies * sizeof(double));
   system_status.vel = (double *) malloc(2 * n_of_bodies * sizeof(double));
-  system_status.acc = (double *) calloc(sizeof(double), 2 * n_of_bodies);
+  system_status.acc = (double *) calloc(2 * n_of_bodies, sizeof(double));
   if (system_status.mass == NULL || system_status.pos == NULL ||
     system_status.vel == NULL || system_status.acc == NULL){
     goto cleanup;
@@ -79,7 +79,7 @@ int main(int argc, char** argv){
 
     time_step_update(system_status.pos, system_status.vel, system_status.acc,
                        n_of_bodies, delta_t, count[rank], disp[rank]);
-    
+
     // Synchronize only the positions, acc ad velocity remains private data of the process
     ret = MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,
                   system_status.pos, count, disp, MPI_DOUBLE, comm);
