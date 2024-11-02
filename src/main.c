@@ -74,8 +74,8 @@ int main(int argc, char** argv){
       }
     }
 
-    compute_new_accelerations(system_status.mass, system_status.pos, system_status.acc, n_of_bodies,
-                        count[rank], disp[rank], NEWTON);
+    compute_new_accelerations(system_status.mass, system_status.pos, system_status.acc,
+                              n_of_bodies, count[rank], disp[rank], NEWTON);
 
     time_step_update(system_status.pos, system_status.vel, system_status.acc,
                        n_of_bodies, delta_t, count[rank], disp[rank]);

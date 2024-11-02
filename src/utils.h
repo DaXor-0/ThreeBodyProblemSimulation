@@ -66,6 +66,7 @@ static inline void print_status(body_system *system_status, size_t n_of_bodies){
   fflush(stdout);
 }
 
+
 /**
  * @brief Copies the current system positions to a buffer at a specified index.
  *
