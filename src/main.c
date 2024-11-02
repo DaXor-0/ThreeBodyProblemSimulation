@@ -19,15 +19,10 @@ int main(int argc, char** argv){
   ret = set_inputs(argc, argv, &n_of_bodies, &n_of_iter, &filename);
   if ( ret == -1 ) goto cleanup;
 
-  int split_rank, *count, *disp;
-  size_t large_body_count, small_body_count;
-  compute_body_count(n_of_bodies, comm_sz, &split_rank, &large_body_count, &small_body_count);
+  int *count, *disp;
   count = (int*) malloc(comm_sz * sizeof(int));
   disp  = (int*) malloc(comm_sz * sizeof(int));
-  for (int i = 0; i < comm_sz; i++){
-    count[i] = (i < split_rank) ? (int) large_body_count * 6 : (int) small_body_count * 6;
-    disp[i]  = (i == 0) ? 0 : disp[i - 1] + count [i - 1];
-  }
+  compute_body_count(n_of_bodies, comm_sz, count, disp);
 
   if (rank == 0 ){
     ret = allocate_store_buffer(&store_buffer, n_of_bodies);

@@ -96,19 +96,24 @@ static inline void get_init_ranges(size_t n_of_bodies){
  *
  * @param n_of_bodies [in] Total number of bodies.
  * @param comm_sz [in] Total number of processes.
- * @param split_index [out] Index of first late_body_count rank.
- * @param early_body_count [out] Bodies assigned to the first `split_index` processes.
- * @param late_body_count [out] Bodies assigned to remaining processes.
+ * @param counts [out] Array of number of elements for wich each rank is responsible.
+ * @param disp [out] Array of displacements (in number of elements) of those counts.
  */
-static inline void compute_body_count(size_t n_of_bodies, int comm_sz, int *split_index, 
-                        size_t *early_body_count, size_t *late_body_count) {
-  *early_body_count = *late_body_count = n_of_bodies / (size_t)comm_sz;
+static inline void compute_body_count(size_t n_of_bodies, int comm_sz, int *counts, int *disp) {
+  int early_body_count, late_body_count, split_index;
+  
+  early_body_count = (int) n_of_bodies / comm_sz;
+  late_body_count = early_body_count;
 
-  *split_index = n_of_bodies % comm_sz;
+  split_index = (int) n_of_bodies % comm_sz;
 
   // If there are any extra bodies, assign one to each of the first `split_index` processes
-  if (*split_index != 0) {
-    (*early_body_count)++;
+  if (split_index != 0) {
+    early_body_count++;
+  }
+  for (int i = 0; i < comm_sz; i++){
+    counts[i] = (i < split_index) ? early_body_count * 6 : late_body_count * 6;
+    disp[i]  = (i == 0) ? 0 : disp[i - 1] + counts [i - 1];
   }
 }
 
