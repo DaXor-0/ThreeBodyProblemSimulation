@@ -12,28 +12,6 @@
 #define FORTH_POW_THRESHOLD 0.1
 
 /**
- * @brief Distributes bodies across processes for load balancing.
- *
- * This macro divides `TOTAL_BODY_COUNT` bodies among `COMM_SZ` processes, assigning the
- * first `SPLIT_INDEX` processes `EARLY_BODY_COUNT` bodies, and the remaining processes 
- * `LATE_BODY_COUNT` bodies. If `TOTAL_BODY_COUNT` is not divisible by `COMM_SZ`, the first 
- * `SPLIT_INDEX` processes handle one extra body.
- *
- * @param TOTAL_BODY_COUNT [in] Total number of bodies.
- * @param COMM_SZ [in] Total number of processes.
- * @param SPLIT_INDEX [out] Number of processes with one extra body.
- * @param EARLY_BODY_COUNT [out] Bodies assigned to the first `SPLIT_INDEX` processes.
- * @param LATE_BODY_COUNT [out] Bodies assigned to remaining processes.
- */
-#define COMPUTE_BODY_COUNT( TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX,   \
-                                  EARLY_BODY_COUNT, LATE_BODY_COUNT ) \
-  EARLY_BODY_COUNT = LATE_BODY_COUNT = TOTAL_BODY_COUNT / COMM_SZ;    \
-  SPLIT_INDEX = TOTAL_BODY_COUNT % COMM_SZ;                           \
-  if (0 != SPLIT_INDEX) {                                             \
-    EARLY_BODY_COUNT = EARLY_BODY_COUNT + 1;                          \
-  }                                                                   \
-
-/**
  * @brief Enum defining different types of acceleration laws.
  * 
  * - `NEWTON`: Inverse-square law of gravitation.
@@ -69,15 +47,40 @@ typedef struct{
  */
 typedef struct{
   size_t bodies;
-  double mass_range;
-  double velocity_range;
+  const double mass_range;
+  const double velocity_range;
+  const double grid_size;
 } ranges;
+
+extern double mass_range, vel_range, grid_max;
 
 extern const ranges init_ranges[];
 
-void set_initial_conditions(body_system *system, size_t n_of_bodies, double * vel_range);
+/**
+ * @brief Distributes bodies across processes for load balancing.
+ *
+ * This macro divides `TOTAL_BODY_COUNT` bodies among `COMM_SZ` processes, assigning the
+ * first `SPLIT_INDEX` processes `EARLY_BODY_COUNT` bodies, and the remaining processes 
+ * `LATE_BODY_COUNT` bodies. If `TOTAL_BODY_COUNT` is not divisible by `COMM_SZ`, the first 
+ * `SPLIT_INDEX` processes handle one extra body.
+ *
+ * @param TOTAL_BODY_COUNT [in] Total number of bodies.
+ * @param COMM_SZ [in] Total number of processes.
+ * @param SPLIT_INDEX [out] Number of processes with one extra body.
+ * @param EARLY_BODY_COUNT [out] Bodies assigned to the first `SPLIT_INDEX` processes.
+ * @param LATE_BODY_COUNT [out] Bodies assigned to remaining processes.
+ */
+#define COMPUTE_BODY_COUNT( TOTAL_BODY_COUNT, COMM_SZ, SPLIT_INDEX,   \
+                                  EARLY_BODY_COUNT, LATE_BODY_COUNT ) \
+  EARLY_BODY_COUNT = LATE_BODY_COUNT = TOTAL_BODY_COUNT / COMM_SZ;    \
+  SPLIT_INDEX = TOTAL_BODY_COUNT % COMM_SZ;                           \
+  if (0 != SPLIT_INDEX) {                                             \
+    EARLY_BODY_COUNT = EARLY_BODY_COUNT + 1;                          \
+  }                                                                   \
 
-void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t my_count, size_t my_first, double vel_range);
+void set_initial_conditions(body_system *system, size_t n_of_bodies);
+
+void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t my_count, size_t my_first);
 
 int compute_new_accelerations(double* data, double* mass, size_t n_of_bodies, size_t my_count, size_t my_first, accel_t type);
 

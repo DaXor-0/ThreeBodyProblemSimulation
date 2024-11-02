@@ -4,7 +4,7 @@ import imageio
 import numpy as np
 import sys
 
-def create_n_body_simulation_gif(csv_file_path, output_gif):
+def create_n_body_simulation_gif(csv_file_path, output_gif, grid_dim):
     # Load the CSV file
     try:
         data = pd.read_csv(csv_file_path)
@@ -34,12 +34,12 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
     data_dict = {iter_num: iter_data for iter_num, iter_data in data.groupby('iter_number')}
 
     # Pre-calculate marker sizes
-    marker_sizes = {body_id: mass for body_id, mass in zip(data['body_id'],data['mass'])}
+    marker_sizes = {body_id: np.sqrt(mass) for body_id, mass in zip(data['body_id'],data['mass'])}
 
     # Set up the plot
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.set_xlim(0, 1600)
-    ax.set_ylim(0, 1600)
+    ax.set_xlim(0, grid_dim)
+    ax.set_ylim(0, grid_dim)
     ax.set_aspect('equal')
     ax.set_title('N-Body Simulation')
     ax.set_xlabel('X Position')
@@ -52,8 +52,8 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
     for iter_num in iterations:
         # Clear plot for the current frame
         ax.cla()
-        ax.set_xlim(0, 1600)
-        ax.set_ylim(0, 1600)
+        ax.set_xlim(0, grid_dim)
+        ax.set_ylim(0, grid_dim)
         ax.set_aspect('equal')
         ax.set_title(f'N-Body Simulation - time elapsed {iter_num/4:.2f}s')
         ax.set_xlabel('X Position')
@@ -72,7 +72,7 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
                 y_pos = body_data['y_pos']
 
                 # Set marker size, defaulting to 5 if the body_id is not in marker_sizes
-                marker_size = np.sqrt(marker_sizes.get(body_id, 5));
+                marker_size = marker_sizes.get(body_id, 5);
                 
                 # Plot the body
                 ax.plot(x_pos, y_pos, 'o', markersize=marker_size, label=f'Body {body_id}' if iter_num == iterations[0] else "")
@@ -92,4 +92,5 @@ def create_n_body_simulation_gif(csv_file_path, output_gif):
 if __name__ == "__main__":
     csv_file_path = sys.argv[1] if len(sys.argv) > 1 else 'output_simulation.csv'
     gif_file_path = sys.argv[2] if len(sys.argv) > 2 else 'output_simulation.gif'
-    create_n_body_simulation_gif(csv_file_path, gif_file_path)
+    grid_dim = sys.argv[3]      if len(sys.argv) > 3 else 400
+    create_n_body_simulation_gif(csv_file_path, gif_file_path, grid_dim)

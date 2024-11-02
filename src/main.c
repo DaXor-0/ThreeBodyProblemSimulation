@@ -40,16 +40,14 @@ int main(int argc, char** argv){
     goto cleanup;
   }
   
-  double vel_range;
   srand(time(0));
   if (rank == 0){
-    set_initial_conditions(&system_status, n_of_bodies, &vel_range);
+    set_initial_conditions(&system_status, n_of_bodies);
     print_status(&system_status, n_of_bodies);
   }
 
   MPI_Bcast(system_status.mass, n_of_bodies, MPI_DOUBLE, 0, comm);
   MPI_Bcast(system_status.data, 6 * n_of_bodies, MPI_DOUBLE, 0, comm);
-  MPI_Bcast(&vel_range, 1, MPI_DOUBLE, 0, comm);
 
   int print_iter = 0;
   double delta_t, elapsed_time = 0;
@@ -73,7 +71,7 @@ int main(int argc, char** argv){
                         count[rank], disp[rank], NEWTON);
     
 
-    time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank], vel_range);
+    time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank]);
 
     MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,
                   system_status.data, count, disp, MPI_DOUBLE, comm);

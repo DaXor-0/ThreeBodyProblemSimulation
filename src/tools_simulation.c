@@ -4,17 +4,19 @@
 
 #include "tools_simulation.h"
 
+double mass_range, vel_range, grid_max;
+
 /**
  * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
  */
 const ranges init_ranges[]={
-  {4,     60.0,   5    },
-  {16,    60.0,   5    },
-  {64,    60.0,   5    },
-  {256,   2.5,    1.25   },
-  {1024,  0.05,   0.625  },
-  {4096,  0.01,   0.3125 },
-  {16384, 0.002,  0.15625}
+  {4,     60.0,   5      , 400},
+  {16,    60.0,   5      , 800},
+  {64,    60.0,   5      , 1600},
+  {256,   2.5,    1.25   , 3200},
+  {1024,  0.05,   0.625  , 6400},
+  {4096,  0.01,   0.3125 , 12800},
+  {16384, 0.002,  0.15625, 25600}
 };
 
 /**
@@ -25,19 +27,22 @@ const ranges init_ranges[]={
  * @param vel_range Pointer to store the velocity range for the given number of bodies.
  * @param pos_range Pointer to store the position range based on grid limits.
  */
-static inline void get_init_ranges(size_t n_of_bodies, double *mass_range, double *vel_range, double* pos_range){
-  *pos_range = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
+static inline void get_init_ranges(size_t n_of_bodies, double* pos_range){
   
   int num_ranges = sizeof(init_ranges) / sizeof(ranges);
   for (int idx = 0; idx < num_ranges - 1; idx++){
     if (n_of_bodies <= init_ranges[idx].bodies){
-      *mass_range = init_ranges[idx].mass_range;
-      *vel_range  = init_ranges[idx].velocity_range;
+      *pos_range = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
+      mass_range = init_ranges[idx].mass_range;
+      vel_range  = init_ranges[idx].velocity_range;
+      grid_max   = init_ranges[idx].grid_size;
       return;
     }
   }
-  *mass_range = init_ranges[num_ranges - 1].mass_range;
-  *vel_range  = init_ranges[num_ranges - 1].velocity_range;
+  *pos_range = (double) RAND_MAX / (GRID_MAX - GRID_MIN);
+  mass_range = init_ranges[num_ranges - 1].mass_range;
+  vel_range  = init_ranges[num_ranges - 1].velocity_range;
+  grid_max   = init_ranges[num_ranges - 1].grid_size;
 }
 
 
@@ -46,22 +51,21 @@ static inline void get_init_ranges(size_t n_of_bodies, double *mass_range, doubl
  * 
  * @param system Pointer to the body system to initialize.
  * @param n_of_bodies Number of bodies in the system.
- * @param vel_range Pointer to save velocity_range.
  */
-void set_initial_conditions(body_system *system, size_t n_of_bodies, double *vel_range){
-  double mass_range, pos_range;
+void set_initial_conditions(body_system *system, size_t n_of_bodies){
+  double pos_range;
   
-  get_init_ranges(n_of_bodies, &mass_range, vel_range, &pos_range);
+  get_init_ranges(n_of_bodies, &pos_range);
 
   int idx;
   for (int body = 0; body < n_of_bodies; body++){
     idx = 6 * body;
     system->mass[body]    = (double) rand() / RAND_MAX * mass_range;
     system->data[idx]     = (double) rand() / pos_range + GRID_MIN;
-    system->data[idx + 1] = (2 * (double)rand() / RAND_MAX - 1) * *vel_range;
+    system->data[idx + 1] = (2 * (double)rand() / RAND_MAX - 1) * vel_range;
     system->data[idx + 2] = 0.0;
     system->data[idx + 3] = (double) rand() / pos_range + GRID_MIN;
-    system->data[idx + 4] = (2 * (double)rand() / RAND_MAX - 1) * *vel_range;
+    system->data[idx + 4] = (2 * (double)rand() / RAND_MAX - 1) * vel_range;
     system->data[idx + 5] = 0.0;
   }
 }
@@ -77,8 +81,8 @@ static inline int check_out_of_bound(double *position){
   if(*position < GRID_MIN){
     *position = 2 * GRID_MIN - *position;
     return 1;
-  } else if(*position > GRID_MAX){
-    *position = 2 * GRID_MAX - *position;
+  } else if(*position > grid_max){
+    *position = 2 * grid_max - *position;
     return -1;
   }
   return 0;
@@ -96,13 +100,12 @@ static inline int check_out_of_bound(double *position){
  * @param delta_t Time step for the update.
  * @param count Total data elements to process.
  * @param first Index of the first element to update in this portion.
- * @param vel_range The range of velocity, needed it out of bound.
  *
  * @note
  * Acceleration must be calculated beforehand
  */
 void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t count,
-                      size_t first, double vel_range){
+                      size_t first){
   double new_x_pos, new_x_vel, new_y_pos, new_y_vel;
   int t_idx, out[2];
   for (size_t target_body = 0; target_body < (count / 6); target_body++){
@@ -252,7 +255,7 @@ double compute_new_delta_t(double* data, size_t n_of_bodies){
     if (this_velocity > max_velocity) max_velocity = this_velocity;
   }
 
-  return 0.001 * (GRID_MAX - GRID_MIN) / sqrt(max_velocity);
+  return 0.001 * (grid_max - GRID_MIN) / sqrt(max_velocity);
 }
 
 
