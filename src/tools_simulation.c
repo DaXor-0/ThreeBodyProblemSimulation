@@ -4,60 +4,27 @@
 
 #include "tools_simulation.h"
 
+double mass_range, vel_range, grid_max;
 
 /**
  * @brief Predefined ranges for initializing body properties. Adjusts mass and velocity ranges based on system size.
  */
 const ranges init_ranges[]={
-  {4,     60.0,   15     , 200},
-  {16,    60.0,   5      , 400},
-  {64,    60.0,   5      , 800},
-  {256,   2.5,    1.25   , 1600},
-  {1024,  0.05,   0.625  , 3200},
-  {4096,  0.01,   0.3125 , 6400},
-  {16384, 0.002,  0.15625, 12800}
+  {4,     60.0,   10     , 400},
+  {16,    60.0,   5      , 800},
+  {64,    60.0,   5      , 1600},
+  {256,   2.5,    1.25   , 3200},
+  {1024,  0.05,   0.625  , 6400},
+  {4096,  0.01,   0.3125 , 12800},
+  {16384, 0.002,  0.15625, 25600}
 };
-
-
-/**
- * @brief Global variables to set up ranges of mass, velocity and grid size
- */
-double mass_range, vel_range, grid_max;
-
-
-/**
- * @brief Distributes bodies across processes for load balancing.
- *
- * @param n_of_bodies [in] Total number of bodies.
- * @param comm_sz [in] Total number of processes.
- * @param counts [out] Array of number of elements for wich each rank is responsible.
- * @param disp [out] Array of displacements (in number of elements) of those counts.
- */
-void compute_body_count(size_t n_of_bodies, int comm_sz, int *counts, int *disp) {
-  int early_body_count, late_body_count, split_index;
-  
-  early_body_count = (int) n_of_bodies / comm_sz;
-  late_body_count = early_body_count;
-
-  split_index = (int) n_of_bodies % comm_sz;
-
-  // If there are any extra bodies, assign one to each of the first `split_index` processes
-  if (split_index != 0) {
-    early_body_count++;
-  }
-  for (int i = 0; i < comm_sz; i++){
-    counts[i] = (i < split_index) ? early_body_count * 6 : late_body_count * 6;
-    disp[i]  = (i == 0) ? 0 : disp[i - 1] + counts [i - 1];
-  }
-}
-
 
 /**
  * @brief Retrieves mass, velocity, and position ranges for initializing a system of a given size.
  *
  * @param n_of_bodies Number of bodies to initialize.
  */
-void get_init_ranges(size_t n_of_bodies){
+static inline void get_init_ranges(size_t n_of_bodies){
   int num_ranges = sizeof(init_ranges) / sizeof(ranges);
   for (int idx = 0; idx < num_ranges - 1; idx++){
     if (n_of_bodies <= init_ranges[idx].bodies){
@@ -80,6 +47,7 @@ void get_init_ranges(size_t n_of_bodies){
  * @param n_of_bodies Number of bodies in the system.
  */
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
+  get_init_ranges(n_of_bodies);
 
   double pos_range = (double) RAND_MAX / (grid_max - GRID_MIN);
   
@@ -130,12 +98,11 @@ static inline int check_out_of_bound(double *position){
  * @note
  * Acceleration must be calculated beforehand
  */
-void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t count,
-                      size_t first){
+void time_step_update(double *data, size_t n_of_bodies, double delta_t){
   double new_x_pos, new_x_vel, new_y_pos, new_y_vel;
   int t_idx, out[2];
-  for (size_t target_body = 0; target_body < (count / 6); target_body++){
-    t_idx = (int)(target_body * 6) + (int) first;
+  for (size_t target_body = 0; target_body < n_of_bodies; target_body++){
+    t_idx = (int)(target_body * 6);
     
     //evaluate postition and velocity and control if in boundary
     new_x_pos = data[t_idx]     + data[t_idx+1]*delta_t + 0.5*data[t_idx+2]*delta_t*delta_t;
@@ -161,7 +128,6 @@ void time_step_update(double *data, size_t n_of_bodies, double delta_t, size_t c
     data[t_idx+4] = new_y_vel;
   }
 }
-
 
 /**
  * @brief Helper function to calculate acceleration based on the distance and mass for different interaction models.
@@ -197,7 +163,6 @@ static inline void acceleration_update(double* acc, double mass, double dist, do
   }
 }
 
-
 /**
  * @brief Computes new accelerations for each body by summing contributions from all other bodies.
  * 
@@ -218,13 +183,12 @@ static inline void acceleration_update(double* acc, double mass, double dist, do
  * 
  * @return int Status code (0 if successful, -1 if error).
  */
-int compute_new_accelerations(double* data, double* mass, size_t n_of_bodies,
-                         size_t my_count, size_t my_first, accel_t type){
+int compute_new_accelerations(double* data, double* mass, size_t n_of_bodies, accel_t type){
   double dist_x, dist_y, radius;
   double t_x_pos, t_y_pos, new_x_acc, new_y_acc;
 
-  for (size_t target_body = 0; target_body < (my_count / 6); target_body++){
-    int t_idx = (int)(target_body * 6) + (int)my_first;
+  for (size_t target_body = 0; target_body < n_of_bodies; target_body++){
+    int t_idx = (int)(target_body * 6);
     
     t_x_pos = data[t_idx];
     t_y_pos = data[t_idx + 3];
@@ -264,7 +228,6 @@ int compute_new_accelerations(double* data, double* mass, size_t n_of_bodies,
   return 0;
 }
 
-
 /**
  * @brief Calculates an appropriate time step for the simulation based on the maximum velocity.
  *
@@ -286,5 +249,3 @@ double compute_new_delta_t(double* data, size_t n_of_bodies){
 
   return 0.001 * (grid_max - GRID_MIN) / sqrt(max_velocity);
 }
-
-
