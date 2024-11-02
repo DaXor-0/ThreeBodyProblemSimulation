@@ -79,7 +79,7 @@ int main(int argc, char** argv){
 
     time_step_update(system_status.pos, system_status.vel, system_status.acc,
                        n_of_bodies, delta_t, count[rank], disp[rank]);
-    
+
     // Synchronize only the positions, acc ad velocity remains private data of the process
     ret = MPI_Allgatherv(MPI_IN_PLACE, count[rank], MPI_DOUBLE,
                   system_status.pos, count, disp, MPI_DOUBLE, comm);
