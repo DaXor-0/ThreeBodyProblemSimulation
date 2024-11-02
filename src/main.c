@@ -48,24 +48,24 @@ int main(int argc, char** argv){
   int print_iter = 0;
   double delta_t, elapsed_time = 0;
   for (int iter = 0; iter < n_of_iter; iter++){
+    // delta_t is calculated at each iteration based on highest velocity body
     delta_t = compute_new_delta_t(system_status.data, n_of_bodies);
     elapsed_time += delta_t;
-    if(rank == 0){
-      // accumulate data every STORE_VAR iterations
-      if(elapsed_time >  print_iter * PRINT_INTERVAL) { 
-        accumulate_data(&store_buffer, print_iter % SAVE_HISTORY, n_of_bodies, &system_status);
-        print_iter++;
-        // write the data to disk every when the buffer is full
-        if( print_iter % SAVE_HISTORY == 0) {
-          ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
-          if (ret == -1) goto cleanup;
-        }
+
+    // rank 0 accumulates data every PRINT_INTERVAL elapsed time
+    if(rank == 0 && elapsed_time > print_iter * PRINT_INTERVAL) { 
+      accumulate_data(&store_buffer, print_iter % TMP_BUF_SIZE, n_of_bodies, &system_status);
+      print_iter++;
+
+      // write the data to disk every when the buffer is full
+      if( print_iter % TMP_BUF_SIZE == 0) {
+        ret = write_data_to_disk(&store_buffer, n_of_bodies, print_iter, filename);
+        if (ret == -1) goto cleanup;
       }
     }
-    
+
     compute_new_accelerations(system_status.data, system_status.mass, n_of_bodies,
                         count[rank], disp[rank], NEWTON);
-    
 
     time_step_update(system_status.data, n_of_bodies, delta_t, count[rank], disp[rank]);
 

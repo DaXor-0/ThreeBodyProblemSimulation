@@ -6,7 +6,7 @@
 
 #include "tools_simulation.h"
 
-#define SAVE_HISTORY    100
+#define TMP_BUF_SIZE    100
 #define PRINT_INTERVAL 0.25
 
 
@@ -55,8 +55,8 @@ static inline int set_inputs(int argc, char **argv, size_t *n_of_bodies, size_t 
  * @return 0 on success, -1 if memory allocation fails.
  */
 static inline int allocate_store_buffer(body_system* store_buffer, size_t n_of_bodies) {
-  store_buffer->mass = (double*) malloc(SAVE_HISTORY * n_of_bodies * sizeof(double));
-  store_buffer->data = (double*) malloc(6 * SAVE_HISTORY * n_of_bodies * sizeof(double));
+  store_buffer->mass = (double*) malloc(TMP_BUF_SIZE * n_of_bodies * sizeof(double));
+  store_buffer->data = (double*) malloc(6 * TMP_BUF_SIZE * n_of_bodies * sizeof(double));
   
   if (store_buffer->mass == NULL || store_buffer->data == NULL){
     fprintf(stderr, "Error: failed memory allocation for store_buffer. Aborting\n");
@@ -135,24 +135,24 @@ static inline void accumulate_data(body_system* store_buffer, int buffer_index, 
  * @return 0 on success, -1 on file I/O error.
  */
 static inline int write_data_to_disk(body_system* store_buffer, size_t n_of_bodies, int print_iter, const char* filename) {
-  FILE* file = fopen(filename, (print_iter == SAVE_HISTORY) ? "w" : "a");
+  FILE* file = fopen(filename, (print_iter == TMP_BUF_SIZE) ? "w" : "a");
   if (!file) {
     fprintf(stderr, "Failed to open file for writing");
     return -1;
   }
   
   // If file is opened for the first time, write a legenda of the values
-  if (print_iter == SAVE_HISTORY){
+  if (print_iter == TMP_BUF_SIZE){
     // printf("CISNSJANIOHGSIOANGIOASNGIONSAIONGISOANSIONGAKDSJNGJIASB");
     fprintf(file, "iter_number,body_id, mass, x_pos, x_vel, x_acc, y_pos, y_vel, y_acc\n");
   }
 
-  for (int step = 0; step < SAVE_HISTORY; ++step) {
+  for (int step = 0; step < TMP_BUF_SIZE; ++step) {
     int iter_idx;
     for (int i = 0; i < n_of_bodies; ++i) {
       iter_idx = step * n_of_bodies + i;
       fprintf(file, "%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
-        print_iter - SAVE_HISTORY + step + 1, i,
+        print_iter - TMP_BUF_SIZE + step + 1, i,
         store_buffer->mass[ iter_idx ],
         store_buffer->data[ iter_idx * 6],      // x_pos
         store_buffer->data[ iter_idx * 6 + 1],  // x_vel
