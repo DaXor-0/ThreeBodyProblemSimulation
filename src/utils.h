@@ -6,8 +6,8 @@
 
 #include "tools_simulation.h"
 
-#define TMP_BUF_SIZE    100
-#define PRINT_INTERVAL 0.25
+#define TMP_BUF_SIZE     100
+#define PRINT_INTERVAL 0.125
 
 
 /**
