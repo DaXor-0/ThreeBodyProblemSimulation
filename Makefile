@@ -14,6 +14,11 @@ MAIN_EXEC = simulation.out
 # Main target that builds both executables
 all: $(MAIN_EXEC)
 
+# Build with Score-P profiling enabled
+profile: CFLAGS_MPI += -DUSE_SCOREP -g
+profile: MPICC := scorep $(MPICC)
+profile: $(MAIN_EXEC)
+
 # Build the main test executable with mpicc
 $(MAIN_EXEC): $(OBJS)
 	$(MPICC) $(CFLAGS_MPI) $(OBJS) -o $(MAIN_EXEC) $(LINK_FLAGS)
