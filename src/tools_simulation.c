@@ -184,7 +184,7 @@ static inline void acceleration_update(double* acc, double mass, double dist, do
       break;
     case FORTH_POW:
       if (radius > FORTH_POW_THRESHOLD){
-        radius = radius * radius * radius *radius;
+        radius = cubed_radius *radius;
         *acc += mass * dist / radius;
       }
       break;
