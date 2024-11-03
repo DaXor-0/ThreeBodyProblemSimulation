@@ -1,4 +1,4 @@
-MPICC = mpicc
+COMPILER = gcc
 CFLAGS_MPI = -O3 -Wall
 LINK_FLAGS = -lm
 
@@ -16,12 +16,12 @@ all: $(MAIN_EXEC)
 
 # Build the main test executable with mpicc
 $(MAIN_EXEC): $(OBJS)
-	$(MPICC) $(OBJS) -o $(MAIN_EXEC) $(LINK_FLAGS)
+	$(COMPILER) $(OBJS) -o $(MAIN_EXEC) $(LINK_FLAGS)
 
 # Build object files for the source files in the src directory with mpicc
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
-	$(MPICC) $(CFLAGS_MPI) -c $< -o $@
+	$(COMPILER) $(CFLAGS_MPI) -c $< -o $@
 
 # Clean command that removes object files and both executables
 clean:

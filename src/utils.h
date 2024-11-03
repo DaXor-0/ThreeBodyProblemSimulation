@@ -47,38 +47,6 @@ static inline int set_inputs(int argc, char **argv, size_t *n_of_bodies, size_t 
 
 
 /**
- * @brief Allocates memory for the buffer to store mass and positional data of a body system.
- *
- * @param store_buffer Pointer to the body_system structure.
- * @param n_of_bodies The number of bodies in the system.
- * 
- * @return 0 on success, -1 if memory allocation fails.
- */
-static inline int allocate_store_buffer(body_system* store_buffer, size_t n_of_bodies) {
-  store_buffer->mass = (double*) malloc(TMP_BUF_SIZE * n_of_bodies * sizeof(double));
-  store_buffer->data = (double*) malloc(6 * TMP_BUF_SIZE * n_of_bodies * sizeof(double));
-  
-  if (store_buffer->mass == NULL || store_buffer->data == NULL){
-    fprintf(stderr, "Error: failed memory allocation for store_buffer. Aborting\n");
-    return -1;
-  }
-
-  return 0;
-}
-
-
-/**
- * @brief Frees memory allocated for the buffer storing body system data.
- *
- * @param store_buffer Pointer to the body_system structure whose memory needs to be freed.
- */
-static inline void free_store_buffer(body_system* store_buffer) {
-  free(store_buffer->mass);
-  free(store_buffer->data);
-}
-
-
-/**
  * @brief Prints to screen the current status of each body in the system.
  *
  * @param system_status Pointer to the body_system structure containing current system status.
@@ -89,52 +57,51 @@ static inline void print_status(body_system *system_status, size_t n_of_bodies){
   for (int idx = 0; idx < n_of_bodies; idx++)
     printf("0,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", idx,
       system_status->mass[idx],
-      system_status->data[idx * 6],      // x_pos
-      system_status->data[idx * 6 + 1],  // x_vel
-      system_status->data[idx * 6 + 2],  // x_acc
-      system_status->data[idx * 6 + 3],  // y_pos
-      system_status->data[idx * 6 + 4],  // y_vel
-      system_status->data[idx * 6 + 5]); // y_acc
+      system_status->pos[idx * 2],      // x_pos
+      system_status->vel[idx * 2],      // x_vel
+      system_status->acc[idx * 2],      // x_acc
+      system_status->pos[idx * 2 + 1],  // y_pos
+      system_status->vel[idx * 2 + 1],  // y_vel
+      system_status->acc[idx * 2 + 1]); // y_acc
   fflush(stdout);
 }
 
 
 /**
- * @brief Copies the current state of the system to a buffer at a specified index.
+ * @brief Copies the current system positions to a buffer at a specified index.
  *
  * @param store_buffer Pointer to the buffer storing system data history.
  * @param store_buffer_index The index in the buffer where the data will be stored.
  * @param n_of_bodies The number of bodies in the system.
  * @param system_status Pointer to the current system state.
  */
-static inline void accumulate_data(body_system* store_buffer, int buffer_index, size_t n_of_bodies, body_system* system_status) {
-  double* mass_offset = store_buffer->mass + (ptrdiff_t)(buffer_index * n_of_bodies);
-  double* data_offset = store_buffer->data + (ptrdiff_t)(buffer_index * n_of_bodies * 6);
-  
+static inline void accumulate_data(double* store_buffer, int buffer_index,
+                                     size_t n_of_bodies, body_system* system_status){
+  double *offset = NULL;
+  offset  = store_buffer + (ptrdiff_t)(buffer_index * n_of_bodies * 2);
+
   for (int idx = 0; idx < n_of_bodies; ++idx) {
-    mass_offset[idx]         = system_status->mass[idx];
-    data_offset[6 * idx]     = system_status->data[6 * idx];     // x_pos
-    data_offset[6 * idx + 1] = system_status->data[6 * idx + 1]; // x_vel
-    data_offset[6 * idx + 2] = system_status->data[6 * idx + 2]; // x_acc
-    data_offset[6 * idx + 3] = system_status->data[6 * idx + 3]; // y_pos
-    data_offset[6 * idx + 4] = system_status->data[6 * idx + 4]; // y_vel
-    data_offset[6 * idx + 5] = system_status->data[6 * idx + 5]; // y_acc
+    offset[2 * idx]     = system_status->pos[2 * idx];     // x_pos
+    offset[2 * idx + 1] = system_status->pos[2 * idx + 1]; // y_pos
   }
 }
+
 
 /**
  * @brief Writes accumulated buffer data to disk.
  * Open and overwrites the file the first time it's called, then the
  * next times appends to the file.
  *
- * @param store_buffer Pointer to the buffer containing the stored data.
+ * @param store_buffer Pointer to the buffer containing the stored positions.
+ * @param mass Array of masses for each body.
  * @param n_of_bodies The number of bodies in the system.
  * @param print_iter The current iteration number.
  * @param filename The name of the file to write the data to.
  * 
  * @return 0 on success, -1 on file I/O error.
  */
-static inline int write_data_to_disk(body_system* store_buffer, size_t n_of_bodies, int print_iter, const char* filename) {
+static inline int write_data_to_disk(double* store_buffer, double* mass, size_t n_of_bodies,
+                                       int print_iter, const char* filename) {
   FILE* file = fopen(filename, (print_iter == TMP_BUF_SIZE) ? "w" : "a");
   if (!file) {
     fprintf(stderr, "Failed to open file for writing");
@@ -144,22 +111,18 @@ static inline int write_data_to_disk(body_system* store_buffer, size_t n_of_bodi
   // If file is opened for the first time, write a legenda of the values
   if (print_iter == TMP_BUF_SIZE){
     // printf("CISNSJANIOHGSIOANGIOASNGIONSAIONGISOANSIONGAKDSJNGJIASB");
-    fprintf(file, "iter_number,body_id, mass, x_pos, x_vel, x_acc, y_pos, y_vel, y_acc\n");
+    fprintf(file, "iter_number, body_id, mass, x_pos, y_pos\n");
   }
 
   for (int step = 0; step < TMP_BUF_SIZE; ++step) {
     int iter_idx;
     for (int i = 0; i < n_of_bodies; ++i) {
       iter_idx = step * n_of_bodies + i;
-      fprintf(file, "%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+      fprintf(file, "%d,%d,%lf,%lf,%lf\n",
         print_iter - TMP_BUF_SIZE + step + 1, i,
-        store_buffer->mass[ iter_idx ],
-        store_buffer->data[ iter_idx * 6],      // x_pos
-        store_buffer->data[ iter_idx * 6 + 1],  // x_vel
-        store_buffer->data[ iter_idx * 6 + 2],  // x_acc
-        store_buffer->data[ iter_idx * 6 + 3],  // y_pos
-        store_buffer->data[ iter_idx * 6 + 4],  // y_vel
-        store_buffer->data[ iter_idx * 6 + 5]); // y_acc
+        mass[i],
+        store_buffer[iter_idx * 2],       // x_pos
+        store_buffer[iter_idx * 2 + 1]);  // y_pos
     }
   }
 
