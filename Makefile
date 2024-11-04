@@ -1,5 +1,5 @@
-COMPILER = gcc
-CFLAGS_MPI = -O3 -Wall
+COMPILER = gcc -fopenmp
+CFLAGS = -O3 -Wall
 LINK_FLAGS = -lm
 
 SRC_DIR = src
@@ -21,7 +21,7 @@ $(MAIN_EXEC): $(OBJS)
 # Build object files for the source files in the src directory with mpicc
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(@D)
-	$(COMPILER) $(CFLAGS_MPI) -c $< -o $@
+	$(COMPILER) $(CFLAGS) -c $< -o $@
 
 # Clean command that removes object files and both executables
 clean:

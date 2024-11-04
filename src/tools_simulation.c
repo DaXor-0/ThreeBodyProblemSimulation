@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
 
 #include "tools_simulation.h"
 
@@ -47,18 +48,22 @@ void get_init_ranges(size_t n_of_bodies){
  * @param n_of_bodies Number of bodies in the system.
  */
 void set_initial_conditions(body_system *system, size_t n_of_bodies){
-  get_init_ranges(n_of_bodies);
 
   double pos_range = (double) RAND_MAX / (grid_max - GRID_MIN);
-  
-  int idx;
-  for (int body = 0; body < n_of_bodies; body++){
-    idx = body * 2;
-    system->mass[body]   = (double) rand() / RAND_MAX * mass_range;
-    system->pos[idx]     = (double) rand() / pos_range + GRID_MIN;
-    system->pos[idx + 1] = (double) rand() / pos_range + GRID_MIN;
-    system->vel[idx]     = (2 * (double)rand() / RAND_MAX - 1) * vel_range;
-    system->vel[idx + 1] = (2 * (double)rand() / RAND_MAX - 1) * vel_range;
+  #pragma omp parallel
+  {
+    unsigned int seed = (unsigned int)(omp_get_thread_num() * 6 + 23);
+    
+    int idx;
+    #pragma omp for private(idx)
+    for (int body = 0; body < n_of_bodies; body++){
+      idx = body * 2;
+      system->mass[body]   = (double) rand_r(&seed) / RAND_MAX * mass_range;
+      system->pos[idx]     = (double) rand_r(&seed) / pos_range + GRID_MIN;
+      system->pos[idx + 1] = (double) rand_r(&seed) / pos_range + GRID_MIN;
+      system->vel[idx]     = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_range;
+      system->vel[idx + 1] = (2 * (double)rand_r(&seed) / RAND_MAX - 1) * vel_range;
+    }
   }
 }
 
@@ -99,33 +104,38 @@ static inline int check_out_of_bound(double *position){
 void time_step_update(double *pos, double *vel, double *acc,
                       size_t n_of_bodies, double delta_t){
   double new_x_pos, new_x_vel, new_y_pos, new_y_vel;
-  int t_idx, out[2];
+  int t_idx, is_out[2];
+  #pragma omp parallel
+  {
+    unsigned int seed = (unsigned int) (omp_get_thread_num() * 4 + 11);
 
-  for (size_t target_body = 0; target_body < n_of_bodies; target_body++){
-    t_idx = (int)(target_body * 2);
-    
-   //evaluate postition and velocity and control if in boundary
-    new_x_pos = pos[t_idx]     + vel[t_idx]     * delta_t + 0.5 * acc[t_idx] * delta_t * delta_t;
-    new_x_vel = vel[t_idx]     + acc[t_idx]     * delta_t;
-    new_y_pos = pos[t_idx + 1] + vel[t_idx + 1] * delta_t + 0.5 * acc[t_idx + 1] * delta_t * delta_t;
-    new_y_vel = vel[t_idx + 1] + acc[t_idx + 1] * delta_t;
-    
-    // Check if is in bound, if not warp it back and randomize new velocity
-    out[0] = check_out_of_bound(&new_x_pos);
-    if (out[0] != 0){
-      new_x_vel = (double)rand() / RAND_MAX * vel_range * (double)out[0];
+    #pragma omp for private(new_x_pos, new_x_vel, new_y_pos, new_y_vel, t_idx, is_out)
+    for (size_t target_body = 0; target_body < n_of_bodies; target_body++){
+      t_idx = (int)(target_body * 2);
+      
+    //evaluate postition and velocity and control if in boundary
+      new_x_pos = pos[t_idx]     + vel[t_idx]     * delta_t + 0.5 * acc[t_idx] * delta_t * delta_t;
+      new_x_vel = vel[t_idx]     + acc[t_idx]     * delta_t;
+      new_y_pos = pos[t_idx + 1] + vel[t_idx + 1] * delta_t + 0.5 * acc[t_idx + 1] * delta_t * delta_t;
+      new_y_vel = vel[t_idx + 1] + acc[t_idx + 1] * delta_t;
+      
+      // Check if is in bound, if not warp it back and randomize new velocity
+      is_out[0] = check_out_of_bound(&new_x_pos);
+      if (is_out[0] != 0){
+        new_x_vel = (double)rand_r(&seed) / RAND_MAX * vel_range * (double)is_out[0];
+      }
+
+      is_out[1] = check_out_of_bound(&new_y_pos);
+      if (is_out[1] != 0){
+        new_y_vel = (double)rand_r(&seed) / RAND_MAX * vel_range * (double)is_out[1];
+      }
+
+      //update position and velocity
+      pos[t_idx]     = new_x_pos;
+      pos[t_idx + 1] = new_y_pos;
+      vel[t_idx]     = new_x_vel;
+      vel[t_idx + 1] = new_y_vel;
     }
-
-    out[1] = check_out_of_bound(&new_y_pos);
-    if (out[1] != 0){
-      new_y_vel = (double)rand() / RAND_MAX * vel_range * (double)out[1];
-    }
-
-    //update position and velocity
-    pos[t_idx]     = new_x_pos;
-    pos[t_idx + 1] = new_y_pos;
-    vel[t_idx]     = new_x_vel;
-    vel[t_idx + 1] = new_y_vel;
   }
 }
 
@@ -150,7 +160,7 @@ static inline void acceleration_update(double* acc, double mass, double dist, do
       break;
     case FORTH_POW:
       if (radius > FORTH_POW_THRESHOLD){
-        radius = radius * radius * radius *radius;
+        radius = cubed_radius *radius;
         *acc += mass * dist / radius;
       }
       break;
@@ -183,7 +193,11 @@ int compute_new_accelerations(double* mass, double* pos, double* acc,
                               size_t n_of_bodies, accel_t type){
   double dist_x, dist_y, radius, cubed_radius;
   double t_x_pos, t_y_pos, new_x_acc, new_y_acc;
+  volatile int error_flag = 0;
 
+  #pragma omp parallel for private(dist_x, dist_y, radius, cubed_radius, \
+                                   t_x_pos, t_y_pos, new_x_acc, new_y_acc) \
+                           shared(error_flag) schedule(static)
   for (size_t target_body = 0; target_body < n_of_bodies; target_body++){
     int t_idx = (int)(target_body * 2);
     
@@ -219,10 +233,16 @@ int compute_new_accelerations(double* mass, double* pos, double* acc,
         acc[t_idx + 1] = new_y_acc / mass[target_body];
         break;
       default:
-        fprintf(stderr, "ERROR: <accel_t> not valid. Aborting...\n");
-        return -1;
+        #pragma omp atomic write
+        error_flag = 1;
     }
   }
+
+  if (error_flag){
+    fprintf(stderr, "ERROR: <accel_t> not valid. Aborting...\n");
+    return -1;
+  }
+
   return 0;
 }
 
@@ -237,7 +257,8 @@ int compute_new_accelerations(double* mass, double* pos, double* acc,
  */
 double compute_new_delta_t(double* vel, size_t n_of_bodies){
   double this_velocity, max_velocity = 0.0;
-  
+
+  #pragma omp parallel for private(this_velocity) reduction(max:max_velocity)
   for(size_t idx = 0; idx < n_of_bodies; idx++){
     this_velocity = vel[idx * 2] * vel[idx * 2] + vel[idx * 2 + 1] * vel[idx * 2 + 1];
     if (this_velocity > max_velocity) max_velocity = this_velocity;
