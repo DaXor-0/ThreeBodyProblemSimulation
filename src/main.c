@@ -1,77 +1,60 @@
 #include <stdio.h>
-#include <time.h>
 
 #include "tools_simulation.h"
 #include "utils.h"
 
-int main(int argc, char *argv[]){
-  body_system system_status;
-  double* store_buffer = NULL;
-  int ret;
-  size_t n_of_bodies, n_of_iter;
-  char* filename;
 
-  ret = set_inputs(argc, argv, &n_of_bodies, &n_of_iter, &filename);
-  if(ret == -1) goto cleanup;
-
-  store_buffer = (double*) malloc(2 * TMP_BUF_SIZE * n_of_bodies * sizeof(double));
-  if ( store_buffer == NULL ) goto cleanup;
-
-  system_status.mass = (double *) malloc(n_of_bodies * sizeof(double));
-  system_status.pos = (double *) malloc(2 * n_of_bodies * sizeof(double));
-  system_status.vel = (double *) malloc(2 * n_of_bodies * sizeof(double));
-  system_status.acc = (double *) calloc(2 * n_of_bodies, sizeof(double));
-  if (system_status.mass == NULL || system_status.pos == NULL ||
-    system_status.vel == NULL || system_status.acc == NULL){
+int main(int argc, char **argv){
+  Body* system = NULL;
+  
+  // Check if correct number of command line input arguments are given
+  if (argc != 3){
+    fprintf(stderr, "Error: using '%s' as <input_file> <output_file>\n", argv[0]);
     goto cleanup;
   }
 
-  srand(time(0));
-  get_init_ranges(n_of_bodies);
-  set_initial_conditions(&system_status, n_of_bodies);
-  print_status(&system_status, n_of_bodies);
+  // Count number of bodies of the system
+  int ret;
+  size_t num_bodies;
+  ret = count_bodies(argv[1], &num_bodies);
+  if(!ret) goto cleanup;
 
-  int print_iter = 0;
-  double delta_t, elapsed_time = 0;
-  for (int iter = 0; iter < n_of_iter; iter++){
-    delta_t = compute_new_delta_t(system_status.vel, n_of_bodies);
-    elapsed_time += delta_t;
-      
-    // accumulate data every PRINT_INTERVAL time elapsed
-    if(elapsed_time >  print_iter * PRINT_INTERVAL) { 
-      accumulate_data(store_buffer, print_iter % TMP_BUF_SIZE, n_of_bodies, &system_status);
-      print_iter++;
-
-      // write the data to disk every when the buffer is full
-      if( print_iter % TMP_BUF_SIZE == 0) {
-        ret = write_data_to_disk(store_buffer, system_status.mass, n_of_bodies, print_iter, filename);
-        if (ret == -1) goto cleanup;
-      }
-    }
-
-    compute_new_accelerations(system_status.mass, system_status.pos, system_status.acc,
-                              n_of_bodies, NEWTON);
-
-    time_step_update(system_status.pos, system_status.vel, system_status.acc,
-                     n_of_bodies, delta_t);
+  // Allocate memory for system
+  system = (Body*)malloc(num_bodies * sizeof(Body));
+  if (!system) {
+    perror("Error allocating memory");
+    goto cleanup;
   }
 
-  printf("\nLast delta_t is: %.5f\n TOTAL ELAPSED (simulation) TIME:%.3f\n", delta_t, elapsed_time);
+  // Parse input file to set initial conditions
+  ret = parse_input(argv[1], system, num_bodies);
+  if(ret == -1) goto cleanup;
   
-  free(store_buffer);
-  free(system_status.mass);
-  free(system_status.pos);
-  free(system_status.vel);
-  free(system_status.acc);
+  // Main computation loop
+  double delta_t, simulation_time = 0;
+  for (int iter = 0; iter < NUM_ITER; iter++){
+    // Calculate delta_t of iteration based on the fastest body in the simulation
+    delta_t = compute_new_delta_t(system, num_bodies);
+    simulation_time += delta_t;
+    
+    // For each element iterate through the other elements to compute new accelerations
+    compute_new_accelerations(system, num_bodies);
+    
+    // Update new positions and velocities with the calculated accelerations
+    update_pos_and_vel(system, num_bodies, delta_t);
+  }
+  
+  // Allocate memory for x and y arrays
+  double *x = malloc(num_bodies * sizeof(double));
+  double *y = malloc(num_bodies * sizeof(double));
+  
+  ret = write_results(argv[2], x, y, num_bodies, simulation_time, real_time);
+
+  free(system);
 
   return 0;
 
 cleanup:
-  if ( NULL != store_buffer)       free(store_buffer);
-  if ( NULL != system_status.mass) free(system_status.mass);
-  if ( NULL != system_status.pos)  free(system_status.pos);
-  if ( NULL != system_status.vel)  free(system_status.vel);
-  if ( NULL != system_status.acc)  free(system_status.acc);
-
+  if ( NULL != system )   free(system);
   return -1;
 }
